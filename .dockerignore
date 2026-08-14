@@ -1,0 +1,17 @@
+.git
+.agents
+.codex
+.env
+.venv
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/node_modules
+**/dist
+quiz-data
+pack_builder/result
+pack_builder/data
+frontend/playwright-report
+frontend/test-results
+frontend/.e2e-data

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "pack_id": "bd275812-96ce-4225-833e-3de6bb40e815",
+  "title": "Доброкек — E2E",
+  "created_at": "2026-08-13T18:30:00Z",
+  "authors": [
+    {"id": "sasha", "display_name": "Саша"},
+    {"id": "misha", "display_name": "Миша"}
+  ],
+  "questions": [
+    {
+      "id": "9f3fef09-b65e-4209-845e-1902bbc11d49",
+      "position": 1,
+      "telegram_chat_id": -1001234567890,
+      "telegram_message_id": 1532,
+      "author_id": "sasha",
+      "media_path": "videos/82fb5e4e-67fb-4f7e-a62d-1b7a5569fa47.mp4",
+      "sha256": "a71dc400efb510caa993c389d10af7324a071d12bc25d49ef5479c483276955d",
+      "duration_ms": 400,
+      "size_bytes": 2765
+    }
+  ]
+}

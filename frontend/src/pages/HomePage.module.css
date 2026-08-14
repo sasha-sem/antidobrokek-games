@@ -1,0 +1,40 @@
+.page { width: min(1080px, calc(100% - 40px)); margin: 0 auto; min-height: 100vh; padding: 64px 0; display: grid; align-content: center; gap: 22px; }
+.hero { max-width: 790px; margin-bottom: 22px; }
+.eyebrow { color: #d8ff49 !important; text-transform: uppercase; letter-spacing: .18em; font-weight: 800; font-size: .78rem; }
+.hero h1 { font-size: clamp(4rem, 12vw, 9rem); line-height: .82; letter-spacing: -.08em; margin: 20px 0 30px; }
+.hero h1 span { color: #d8ff49; }
+.hero > p:last-child { color: #aaa8bc; font-size: 1.12rem; max-width: 620px; }
+.joinCard, .hostCard, .hostEntry { border: 1px solid #303044; border-radius: 24px; background: rgba(18, 18, 27, .86); }
+.joinCard { padding: 28px; }
+.cardTitle, .hostEntry { display: flex; align-items: center; gap: 20px; }
+.cardTitle > span, .hostEntry > span { color: #d8ff49; font: 800 1.2rem monospace; }
+.cardTitle h2, .hostEntry h2 { margin: 0 0 4px; font-size: 1.3rem; }
+.cardTitle p, .hostEntry p { margin: 0; color: #88869a; }
+.joinForm { display: grid; grid-template-columns: 1fr 1.2fr auto; gap: 14px; align-items: end; margin-top: 26px; }
+.page label { display: grid; gap: 8px; font-size: .82rem; color: #aaa8bc; }
+.page input { width: 100%; min-height: 52px; border: 1px solid #363648; border-radius: 13px; background: #0e0e16; color: white; padding: 0 15px; font: inherit; outline: none; box-sizing: border-box; }
+.page input:focus { border-color: #d8ff49; box-shadow: 0 0 0 3px rgba(216,255,73,.1); }
+.primary, .secondary { min-height: 52px; border: 0; border-radius: 13px; padding: 0 24px; font: 800 1rem inherit; cursor: pointer; }
+.primary { background: #d8ff49; color: #101207; }
+.primary:hover { background: #e5ff85; }
+.primary:disabled { opacity: .5; cursor: wait; }
+.secondary { margin-left: auto; background: #262635; color: white; }
+.hostEntry { padding: 20px 28px; }
+.hostCard { padding: 28px; }
+.hostCard form { display: grid; grid-template-columns: 1.3fr 1.3fr 1fr auto; align-items: end; gap: 18px; }
+.file { position: relative; border: 1px dashed #45455b; border-radius: 13px; min-height: 50px; padding: 8px 14px; cursor: pointer; }
+.file small { color: #6f6d7e; }
+.file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.progress { grid-column: 1 / -1; height: 4px; border-radius: 4px; background: #2a2a38; overflow: hidden; }
+.progress span { display: block; height: 100%; background: #d8ff49; transition: width .2s; }
+.closeCurrent { grid-column: 1 / -1; justify-self: end; min-height: 42px; border: 1px solid #643043; border-radius: 11px; padding: 0 16px; background: #2f1820; color: #ff9aac; cursor: pointer; font: 700 .86rem inherit; }
+.closeCurrent:disabled { opacity: .4; cursor: not-allowed; }
+.notice { position: fixed; right: 24px; bottom: 24px; max-width: 420px; padding: 16px 20px; border: 1px solid #7d9630; background: #202b15; border-radius: 14px; color: #e9ffc2; }
+.error { position: fixed; right: 24px; bottom: 24px; max-width: 420px; padding: 16px 20px; border: 1px solid #ff5470; background: #351923; border-radius: 14px; color: #ffdce2; }
+@media (max-width: 768px) {
+  .page { width: min(100% - 24px, 640px); padding: 36px 0; }
+  .joinForm, .hostCard form { grid-template-columns: 1fr; }
+  .hostEntry { align-items: flex-start; flex-wrap: wrap; }
+  .secondary { width: 100%; margin: 8px 0 0; }
+  .hero h1 { font-size: clamp(4rem, 24vw, 7rem); }
+}

@@ -1,0 +1,15 @@
+authors:
+  - id: sasha
+    display_name: Саша
+    aliases:
+      - Саша
+      - Александр
+  - id: misha
+    display_name: Миша
+    aliases:
+      - Миша
+      - Михаил
+  - id: ilya
+    display_name: Илья
+    aliases:
+      - Илья

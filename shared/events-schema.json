@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Dobrokek WebSocket envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "server_time", "payload"],
+  "properties": {
+    "type": {
+      "enum": [
+        "authenticated", "room_snapshot", "player_joined", "player_left",
+        "player_connection_changed", "room_state_changed", "question_preload",
+        "question_started", "answer_accepted", "question_revealed", "scoreboard_updated",
+        "reaction_accepted", "game_finished", "player_kicked", "error", "pong"
+      ]
+    },
+    "request_id": {"type": "string", "format": "uuid"},
+    "server_time": {"type": "string", "format": "date-time"},
+    "payload": {"type": "object"}
+  }
+}

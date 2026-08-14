@@ -1,0 +1,54 @@
+services:
+  quiz-api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: dobrokek-quiz-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./quiz-data:/data/quiz
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  quiz-web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: dobrokek-quiz-web
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:-:80}
+      MAX_PACK_SIZE_MB: ${MAX_PACK_SIZE_MB:-500}
+    depends_on:
+      quiz-api:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./quiz-data:/data/quiz:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,6 @@
+:root { font-family: Manrope, system-ui, sans-serif; color: #f5f4fa; background: #09090f; font-synthesis: none; text-rendering: optimizeLegibility; }
+* { box-sizing: border-box; }
+html, body, #root { min-width: 320px; min-height: 100%; margin: 0; }
+body { min-height: 100vh; background: radial-gradient(circle at 75% 0%, rgba(87, 57, 135, .2), transparent 35%), linear-gradient(#0b0b12, #08080d); }
+button, input { font-family: inherit; }
+button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid rgba(216,255,73,.55); outline-offset: 3px; }

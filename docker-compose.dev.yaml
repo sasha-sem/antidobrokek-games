@@ -1,0 +1,17 @@
+services:
+  quiz-api:
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  quiz-media:
+    image: caddy:2.10-alpine
+    command: ["caddy", "file-server", "--root", "/srv", "--listen", ":80"]
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./quiz-data/media/active:/srv:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
