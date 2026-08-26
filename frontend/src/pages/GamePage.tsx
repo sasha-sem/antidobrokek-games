@@ -1,11 +1,11 @@
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getPublicSnapshot, joinRoom } from "../api/client";
 import { Scoreboard } from "../components/Scoreboard";
 import { useRoomSocket } from "../hooks/useRoomSocket";
 import { useSynchronizedPlayback } from "../hooks/useSynchronizedPlayback";
 import type { Author, CurrentQuestion, RoomSnapshot, ScoreRow, ServerEnvelope } from "../types/events";
-import { getIdentity, tokenKey } from "../utils/identity";
+import { tokenKey } from "../utils/identity";
+import { InviteJoin } from "./InvitePage";
 import styles from "./GamePage.module.css";
 
 interface RevealPayload {
@@ -15,10 +15,6 @@ interface RevealPayload {
   is_correct?: boolean;
   scoreboard: ScoreRow[];
   next_question_at?: string;
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "Неизвестная ошибка";
 }
 
 function Connection({ code, role, token }: { code: string; role: "host" | "player"; token: string }) {
@@ -299,50 +295,4 @@ export function GamePage({ role }: { role: "host" | "player" }) {
   if (!token && role === "player") return <InviteJoin code={code} onJoined={setToken} />;
   if (!token) return <main className={styles.center}><h1>Нет доступа к комнате</h1><p>Откройте приглашение игрока и войдите под своим именем.</p><Link className={styles.linkButton} to={`/room/${code}`}>Войти в комнату</Link></main>;
   return <Connection code={code} role={role} token={token} />;
-}
-
-function InviteJoin({ code, onJoined }: { code: string; onJoined: (token: string) => void }) {
-  const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
-  const [name, setName] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let active = true;
-    getPublicSnapshot(code)
-      .then((value) => { if (active) setSnapshot(value); })
-      .catch((caught) => { if (active) setError(errorMessage(caught)); });
-    return () => { active = false; };
-  }, [code]);
-
-  const join = async (event: FormEvent) => {
-    event.preventDefault();
-    setBusy(true);
-    setError("");
-    try {
-      const result = await joinRoom(code, name, getIdentity());
-      sessionStorage.setItem(tokenKey("player", code), result.reconnect_token);
-      onJoined(result.reconnect_token);
-    } catch (caught) {
-      setError(errorMessage(caught));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  if (!snapshot && !error) return <main className={styles.center}><div className={styles.loader} /><h1>Проверяем приглашение…</h1><p>Комната {code}</p></main>;
-
-  return (
-    <main className={styles.invitePage}>
-      <Link to="/" className={styles.logo}>Доброкек<span>.</span></Link>
-      <section className={styles.inviteCard}>
-        <p className={styles.kicker}>Приглашение в комнату</p>
-        <h1>{code}</h1>
-        {snapshot ? <><h2>{snapshot.pack.title}</h2><p>{snapshot.pack.question_count} вопросов · {snapshot.players.length}/5 игроков</p></> : null}
-        {snapshot?.room.state === "LOBBY" ? <form onSubmit={join}><label>Как тебя зовут?<input autoFocus aria-label="Твоё имя" value={name} onChange={(event) => setName(event.target.value.slice(0, 24))} placeholder="Саша" required /></label><button className={styles.primary} disabled={busy}>{busy ? "Входим…" : "Войти в лобби →"}</button></form> : snapshot ? <p className={styles.error}>Игра уже началась — новые игроки войти не могут.</p> : null}
-        {error ? <p role="alert" className={styles.error}>{error}</p> : null}
-        <Link to="/" className={styles.backLink}>Ввести другой код</Link>
-      </section>
-    </main>
-  );
 }

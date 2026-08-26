@@ -1,0 +1,136 @@
+.page {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background: #000000;
+}
+
+.bgVideo {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.bgOverlayVignette {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(120% 95% at 50% 8%, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.5) 55%, rgba(0, 0, 0, 0.82) 100%);
+}
+
+.bgOverlayDim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+/* Pause button: the icon lives in its own fixed 36px square that never moves,
+   so it stays centered in the circle whether the pill is collapsed or expanded
+   on hover. 36px, not 38px: .pauseButton is border-box with a 1px border, so
+   its actual content box is 38 − 1px − 1px = 36px — matching the icon slot to
+   that exact box removes a ~1px rightward centering bias. */
+.pauseButton {
+  position: fixed;
+  left: 22px;
+  bottom: 22px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  height: 38px;
+  width: 38px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(242, 242, 242, 0.14);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(242, 242, 242, 0.62);
+  opacity: 0.55;
+  cursor: pointer;
+  transition: opacity 200ms ease, width 240ms var(--ease-drawer), border-color 200ms ease, color 200ms ease;
+}
+.pauseButton:hover,
+.pauseButton:focus-visible {
+  opacity: 1;
+  width: 92px;
+  border-color: rgba(230, 253, 70, 0.45);
+  color: #e6fd46;
+}
+.pauseIcon {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pauseLabel {
+  flex: none;
+  padding-right: 20px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 180ms ease, transform 220ms var(--ease-drawer);
+}
+.pauseButton:hover .pauseLabel,
+.pauseButton:focus-visible .pauseLabel {
+  opacity: 1;
+  transform: none;
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 96px 24px;
+}
+
+.inner {
+  width: 100%;
+  max-width: 1080px;
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+  animation: floatUp 700ms ease-out both;
+}
+
+@keyframes floatUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 56px 18px;
+  }
+  .inner {
+    gap: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inner {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

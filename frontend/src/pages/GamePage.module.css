@@ -4,16 +4,6 @@
 .loader { width: 38px; height: 38px; border: 3px solid #30303f; border-top-color: #d8ff49; border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .error { color: #ff6d83 !important; }
-.invitePage { width: min(760px, calc(100% - 32px)); min-height: 100vh; margin: 0 auto; padding: 32px 0; display: grid; grid-template-rows: auto 1fr; }
-.inviteCard { align-self: center; padding: clamp(26px, 5vw, 52px); border: 1px solid #343445; border-radius: 26px; background: #171721; text-align: center; box-shadow: 0 28px 80px rgba(0,0,0,.3); }
-.inviteCard h1 { margin: 14px 0 18px; color: #d8ff49; font: 900 clamp(3.5rem, 13vw, 7rem)/1 monospace; letter-spacing: .1em; }
-.inviteCard h2 { margin: 0 0 8px; font-size: clamp(1.2rem, 4vw, 1.8rem); }
-.inviteCard > p:not(.kicker):not(.error) { color: #8f8da0; }
-.inviteCard form { width: min(420px, 100%); margin: 28px auto 20px; display: grid; gap: 14px; text-align: left; }
-.inviteCard label { display: grid; gap: 8px; color: #aaa8bc; font-size: .85rem; }
-.inviteCard input { width: 100%; min-height: 54px; box-sizing: border-box; padding: 0 16px; border: 1px solid #3a3a4b; border-radius: 13px; background: #0d0d14; color: white; font: inherit; outline: none; }
-.inviteCard input:focus { border-color: #d8ff49; box-shadow: 0 0 0 3px rgba(216,255,73,.1); }
-.backLink { display: inline-block; margin-top: 10px; color: #9997aa; }
 .linkButton, .primary, .secondary, .danger, .copy { min-height: 48px; border: 0; border-radius: 13px; padding: 0 22px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font: 800 1rem inherit; cursor: pointer; }
 .primary, .linkButton { background: #d8ff49; color: #11130a; }
 .secondary, .copy { background: #292938; color: #fff; }

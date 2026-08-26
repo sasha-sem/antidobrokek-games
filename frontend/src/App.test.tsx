@@ -4,6 +4,6 @@ import App from "./App";
 
 test("показывает русскую форму входа", () => {
   render(<App />);
-  expect(screen.getByRole("heading", { name: /Доброкек/ })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: /доброкек/i })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /Войти/ })).toBeInTheDocument();
 });

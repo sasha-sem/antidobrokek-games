@@ -1,40 +1,534 @@
-.page { width: min(1080px, calc(100% - 40px)); margin: 0 auto; min-height: 100vh; padding: 64px 0; display: grid; align-content: center; gap: 22px; }
-.hero { max-width: 790px; margin-bottom: 22px; }
-.eyebrow { color: #d8ff49 !important; text-transform: uppercase; letter-spacing: .18em; font-weight: 800; font-size: .78rem; }
-.hero h1 { font-size: clamp(4rem, 12vw, 9rem); line-height: .82; letter-spacing: -.08em; margin: 20px 0 30px; }
-.hero h1 span { color: #d8ff49; }
-.hero > p:last-child { color: #aaa8bc; font-size: 1.12rem; max-width: 620px; }
-.joinCard, .hostCard, .hostEntry { border: 1px solid #303044; border-radius: 24px; background: rgba(18, 18, 27, .86); }
-.joinCard { padding: 28px; }
-.cardTitle, .hostEntry { display: flex; align-items: center; gap: 20px; }
-.cardTitle > span, .hostEntry > span { color: #d8ff49; font: 800 1.2rem monospace; }
-.cardTitle h2, .hostEntry h2 { margin: 0 0 4px; font-size: 1.3rem; }
-.cardTitle p, .hostEntry p { margin: 0; color: #88869a; }
-.joinForm { display: grid; grid-template-columns: 1fr 1.2fr auto; gap: 14px; align-items: end; margin-top: 26px; }
-.page label { display: grid; gap: 8px; font-size: .82rem; color: #aaa8bc; }
-.page input { width: 100%; min-height: 52px; border: 1px solid #363648; border-radius: 13px; background: #0e0e16; color: white; padding: 0 15px; font: inherit; outline: none; box-sizing: border-box; }
-.page input:focus { border-color: #d8ff49; box-shadow: 0 0 0 3px rgba(216,255,73,.1); }
-.primary, .secondary { min-height: 52px; border: 0; border-radius: 13px; padding: 0 24px; font: 800 1rem inherit; cursor: pointer; }
-.primary { background: #d8ff49; color: #101207; }
-.primary:hover { background: #e5ff85; }
-.primary:disabled { opacity: .5; cursor: wait; }
-.secondary { margin-left: auto; background: #262635; color: white; }
-.hostEntry { padding: 20px 28px; }
-.hostCard { padding: 28px; }
-.hostCard form { display: grid; grid-template-columns: 1.3fr 1.3fr 1fr auto; align-items: end; gap: 18px; }
-.file { position: relative; border: 1px dashed #45455b; border-radius: 13px; min-height: 50px; padding: 8px 14px; cursor: pointer; }
-.file small { color: #6f6d7e; }
-.file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.progress { grid-column: 1 / -1; height: 4px; border-radius: 4px; background: #2a2a38; overflow: hidden; }
-.progress span { display: block; height: 100%; background: #d8ff49; transition: width .2s; }
-.closeCurrent { grid-column: 1 / -1; justify-self: end; min-height: 42px; border: 1px solid #643043; border-radius: 11px; padding: 0 16px; background: #2f1820; color: #ff9aac; cursor: pointer; font: 700 .86rem inherit; }
-.closeCurrent:disabled { opacity: .4; cursor: not-allowed; }
-.notice { position: fixed; right: 24px; bottom: 24px; max-width: 420px; padding: 16px 20px; border: 1px solid #7d9630; background: #202b15; border-radius: 14px; color: #e9ffc2; }
-.error { position: fixed; right: 24px; bottom: 24px; max-width: 420px; padding: 16px 20px; border: 1px solid #ff5470; background: #351923; border-radius: 14px; color: #ffdce2; }
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #e6fd46;
+}
+
+.logoMark {
+  display: block;
+  width: 100%;
+  max-width: 660px;
+  height: auto;
+  filter: drop-shadow(0 18px 60px rgba(230, 253, 70, 0.2));
+}
+
+.tagline {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: #fff;
+  background-image: linear-gradient(100deg, #868686 0%, #868686 38%, #ffffff 50%, #868686 62%, #868686 100%);
+  background-size: 230% 100%;
+  background-repeat: repeat-x;
+  background-position: 130% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine 5s infinite linear;
+  -webkit-text-size-adjust: none;
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* The glass-card look, shared by every "important" panel on this page's
+   visual family (the join card here, the invite card on InvitePage). Kept
+   as its own class instead of duplicating the declarations, per the
+   "extend tokens/components, don't fork them" rule. */
+.glassCard {
+  position: relative;
+  padding: 30px 34px 34px;
+  border: 1px solid rgba(242, 242, 242, 0.14);
+  border-radius: 24px;
+  background: linear-gradient(148deg, rgba(242, 242, 242, 0.1) 0%, rgba(242, 242, 242, 0.035) 42%, rgba(0, 0, 0, 0.16) 100%);
+  backdrop-filter: blur(26px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 -1px 0 rgba(0, 0, 0, 0.35), 0 26px 70px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+.glassCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(70% 120% at 12% -20%, rgba(230, 253, 70, 0.14) 0%, rgba(230, 253, 70, 0) 62%);
+}
+
+.joinCard {
+  composes: glassCard;
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 0 20px;
+}
+
+.cardNumber {
+  position: relative;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: #e6fd46;
+  padding-top: 5px;
+}
+
+.cardBody {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+
+.cardHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cardHeading h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #f2f2f2;
+}
+.cardHeading p {
+  margin: 0;
+  font-size: 15px;
+  color: #b3b3b3;
+}
+
+.joinForm {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: #b3b3b3;
+  min-width: 0;
+}
+
+/* Scoped to .field (the label wrapper every plain input sits in) rather
+   than a page-level ancestor — this file no longer owns the page shell
+   (that's AnimatedBackdrop now), so the old .page-prefixed scoping would
+   silently stop matching anything. */
+.field input:not([type="range"]) {
+  width: 100%;
+  height: 52px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(242, 242, 242, 0.16);
+  background: rgba(0, 0, 0, 0.22);
+  color: #f2f2f2;
+  font: inherit;
+  font-family: Manrope, sans-serif;
+  font-size: 16px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 160ms ease;
+}
+.field input::placeholder {
+  color: #656565;
+}
+.field input:not([type="range"]):focus {
+  border-color: #e6fd46 !important;
+}
+/* The app-wide focus ring (styles.css) draws a 3px outline offset 3px from
+   the element — on top of the border-color swap above that reads as a
+   double highlight. The border swap alone is a clear, high-contrast focus
+   indicator here, so the offset ring is redundant on this page's inputs. */
+.field input:not([type="range"]):focus-visible {
+  outline: none;
+}
+/* Chrome/Edge autofill (e.g. a saved password on the secret field) paints
+   its own background and text color, ignoring ours, until this override —
+   the long transition-delay is the standard trick to suppress that repaint. */
+.field input:-webkit-autofill,
+.field input:-webkit-autofill:hover,
+.field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f2f2f2;
+  -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.22) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+.codeInput {
+  font-family: "JetBrains Mono", monospace !important;
+  letter-spacing: 0.14em;
+}
+
+.primary {
+  height: 52px;
+  padding: 0 28px;
+  border-radius: 12px;
+  white-space: nowrap;
+  border: 1.5px solid rgba(230, 253, 70, 0.6);
+  background-color: transparent;
+  background-image: linear-gradient(#e6fd46, #e6fd46);
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 0% 100%;
+  color: #e6fd46;
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-size 280ms var(--ease-drawer), color 200ms ease, border-color 200ms ease,
+    transform 140ms var(--ease-out);
+}
+.primary:hover:not(:disabled) {
+  background-size: 100% 100%;
+  color: #191919;
+  border-color: #e6fd46;
+}
+.primary:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hostEntry {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  gap: 0 20px;
+  align-items: center;
+  padding: 28px 34px;
+  border: 1px solid rgba(242, 242, 242, 0.08);
+  border-radius: 20px;
+  background: rgba(25, 25, 25, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.hostEntry .cardNumber {
+  color: #919d46;
+  padding-top: 0;
+}
+
+.secondary {
+  white-space: nowrap;
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 12px;
+  border: 1px solid rgba(242, 242, 242, 0.14);
+  background: rgba(242, 242, 242, 0.06);
+  color: #f2f2f2;
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, transform 140ms var(--ease-out);
+}
+.secondary:hover {
+  background: rgba(242, 242, 242, 0.12);
+}
+.secondary:active {
+  transform: scale(0.97);
+}
+
+.hostCard {
+  padding: 30px 34px 34px;
+  border: 1px solid rgba(242, 242, 242, 0.08);
+  border-radius: 20px;
+  background: rgba(25, 25, 25, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+@starting-style {
+  .hostCard {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+.hostCard form {
+  display: grid;
+  grid-template-columns: 1.3fr 1.3fr 1fr auto;
+  align-items: end;
+  gap: 18px;
+}
+.file {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+  min-width: 0;
+  height: 52px;
+  border: 1px dashed rgba(242, 242, 242, 0.24);
+  border-radius: 12px;
+  padding: 0 14px;
+  cursor: pointer;
+  color: #f2f2f2;
+  font-size: 14px;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.file:hover {
+  border-color: rgba(242, 242, 242, 0.4);
+  background: rgba(242, 242, 242, 0.04);
+}
+.file > span {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.file small {
+  color: #656565;
+}
+.file input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* The whole panel is the drop target (not just the file box) — highlighted
+   via .fileActive on the card itself; the file box mirrors the same state
+   so it's still obvious where the file will land. */
+.hostCard.fileActive {
+  border-color: rgba(230, 253, 70, 0.5);
+  background: rgba(230, 253, 70, 0.04);
+}
+.hostCard.fileActive .file {
+  border-style: solid;
+  border-color: #e6fd46;
+  background: rgba(230, 253, 70, 0.08);
+}
+
+/* Custom slider built from real, inspectable DOM elements instead of
+   ::-webkit-slider-thumb / ::-moz-range-thumb. Those vendor pseudo-elements
+   don't reliably expose their true geometry (getComputedStyle on them
+   returns nonsense in some engines) and their vertical centering has to be
+   hand-computed per browser via margin-top — fragile, and it kept drifting
+   here across two attempts despite the arithmetic checking out.
+   The real <input type="range"> stays fully functional (drag, click,
+   arrow keys, screen readers) but is painted fully transparent and
+   stretched over the whole control; a plain, real track + thumb <div>
+   underneath do the rendering. Both are centered with
+   `top: 50%; transform: translateY(-50%)`, which is not an estimate —
+   it's the browser centering an element of KNOWN, INSPECTABLE height
+   inside its parent, verifiable at any time with getBoundingClientRect(). */
+.rangeWrap {
+  position: relative;
+  height: 22px;
+}
+.rangeTrack {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(242, 242, 242, 0.18);
+  overflow: hidden;
+  pointer-events: none;
+}
+.rangeFill {
+  height: 100%;
+  background: #e6fd46;
+}
+.rangeThumb {
+  position: absolute;
+  top: 50%;
+  left: 0%;
+  width: 34px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: #e6fd46;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  transition: transform 140ms var(--ease-out);
+}
+.rangeInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.rangeInput::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 34px;
+  height: 22px;
+}
+.rangeInput::-moz-range-thumb {
+  width: 34px;
+  height: 22px;
+  border: none;
+}
+.rangeInput:hover ~ .rangeThumb {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+.rangeInput:focus-visible ~ .rangeThumb {
+  box-shadow: 0 0 0 3px rgba(230, 253, 70, 0.4), 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+.progress {
+  grid-column: 1 / -1;
+  height: 4px;
+  border-radius: 4px;
+  background: rgba(242, 242, 242, 0.12);
+  overflow: hidden;
+}
+.progress span {
+  display: block;
+  height: 100%;
+  background: #e6fd46;
+  transition: width 0.2s;
+}
+.closeCurrent {
+  position: relative;
+  overflow: hidden;
+  /* Same "auto" column as .primary above it (not grid-column: 1 / -1
+     shrunk to its own text) — an auto-sized grid track is shared across
+     every row that uses it, so pinning both buttons to column 4 forces
+     them to the same width instead of each sizing to its own label. */
+  grid-column: 4;
+  justify-self: stretch;
+  height: 52px;
+  padding: 0 28px;
+  border-radius: 12px;
+  white-space: nowrap;
+  border: 1.5px solid rgba(255, 90, 120, 0.55);
+  background: transparent;
+  color: #ff9aac;
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+  transition: background 160ms ease, border-color 160ms ease, transform 140ms var(--ease-out);
+}
+.closeCurrent:hover:not(:disabled) {
+  background: rgba(255, 90, 120, 0.1);
+  border-color: rgba(255, 90, 120, 0.8);
+}
+.closeCurrent:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.closeCurrent:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+/* Hold-to-confirm fill: replaces a native window.confirm() with a tactile
+   press-and-hold. clip-path (not width) so it stays GPU-composited; linear
+   while filling (a deliberate, timed action), fast ease-out snap-back if
+   released early — the same asymmetry as a hold-to-delete pattern. */
+.closeFill {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 90, 120, 0.4);
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 200ms var(--ease-out);
+  pointer-events: none;
+}
+.closeFillActive {
+  clip-path: inset(0 0 0 0);
+  transition-timing-function: linear;
+}
+.closeLabel {
+  position: relative;
+}
+
+.notice,
+.error {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 6;
+  max-width: 420px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  font-size: 14px;
+}
+.notice {
+  border: 1px solid rgba(145, 157, 70, 0.6);
+  background: rgba(25, 33, 15, 0.92);
+  color: #e9ffc2;
+}
+.error {
+  border: 1px solid rgba(255, 84, 112, 0.6);
+  background: rgba(53, 25, 35, 0.92);
+  color: #ffdce2;
+}
+
+@keyframes shine {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -30% 0;
+  }
+}
+
 @media (max-width: 768px) {
-  .page { width: min(100% - 24px, 640px); padding: 36px 0; }
-  .joinForm, .hostCard form { grid-template-columns: 1fr; }
-  .hostEntry { align-items: flex-start; flex-wrap: wrap; }
-  .secondary { width: 100%; margin: 8px 0 0; }
-  .hero h1 { font-size: clamp(4rem, 24vw, 7rem); }
+  .tagline {
+    white-space: normal;
+  }
+  .joinCard {
+    grid-template-columns: 1fr;
+    padding: 26px 22px 30px;
+  }
+  .joinCard .cardNumber {
+    padding-top: 0;
+  }
+  .joinForm,
+  .hostCard form {
+    grid-template-columns: 1fr;
+  }
+  .hostEntry {
+    grid-template-columns: 1fr;
+    justify-items: start;
+    gap: 12px;
+    padding: 24px 22px;
+  }
+  .secondary {
+    width: 100%;
+  }
+  .notice,
+  .error {
+    left: 16px;
+    right: 16px;
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tagline {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  /* Keep the hold-to-confirm state legible (a solid tint appears while
+     held) without the traveling-fill motion. */
+  .closeFillActive {
+    transition-duration: 1ms !important;
+  }
 }

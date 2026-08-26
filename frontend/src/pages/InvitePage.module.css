@@ -1,0 +1,207 @@
+.inviteColumn {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  text-align: center;
+}
+
+/* align-items: center on .inviteColumn shrink-wraps its children by
+   default — the card would then be exactly as wide as its longest line of
+   text (the pack title, most often), not the column. Stretching it
+   explicitly makes the card's width deterministic (always the full
+   column) instead of incidentally "wide enough" depending on copy length. */
+.inviteCard {
+  align-self: stretch;
+}
+
+/* Bumped up from the shared .eyebrow's 13px — this card's own headline is
+   the giant room code below it, and at 13px the kicker read as an
+   afterthought next to it. Kept as an add-on modifier (applied alongside
+   homeStyles.eyebrow) rather than editing the shared class, so the Home
+   page's own eyebrow — already sized right for its 1080px-wide hero — is
+   untouched. */
+.inviteEyebrow {
+  font-size: 16px;
+  letter-spacing: 0.24em;
+}
+
+.roomCode {
+  position: relative;
+  margin: 4px 0 0;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+  font-size: clamp(2.6rem, 9vw, 4rem);
+  letter-spacing: 0.1em;
+  color: #e6fd46;
+}
+
+.status {
+  position: relative;
+  margin: 0;
+  color: #b3b3b3;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.inviteForm {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+  text-align: left;
+}
+
+/* Shared by every icon+text button on this page (currently just
+   .backLink, plus the shelved .btnFill below) — keeps label/icon above
+   the pseudo-element layers each variant paints its hover effect on. */
+.btnLabel {
+  position: relative;
+  z-index: 1;
+}
+
+/* "На главную" — the chosen variant (glass): a frosted panel that lights
+   up on hover. Picked over a left-to-right fill sweep (too close to
+   .primary's own "submit" gesture — see the shelved .btnFill below) and
+   an underline-sweep text link (dropped entirely).
+   border-radius: 12px, not the pasted reference's 999px pill — every other
+   text button in the app (.primary, .secondary, .closeCurrent) uses 12px;
+   a pill here would be the one shape-inconsistent button on the page. */
+.backLink {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-family: Manrope, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #b3b3b3;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: border-color 300ms ease, color 300ms ease, transform 200ms ease, background 300ms ease,
+    box-shadow 300ms ease;
+}
+.backLink::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 50%, rgba(230, 253, 70, 0.04));
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+.backLink::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: 12px;
+  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.12), transparent 70%);
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+.backLink svg {
+  position: relative;
+  z-index: 1;
+  transition: filter 300ms ease;
+}
+.backLink:hover {
+  color: #f2f2f2;
+  border-color: rgba(230, 253, 70, 0.3);
+  background: rgba(230, 253, 70, 0.05);
+  box-shadow: 0 0 40px rgba(230, 253, 70, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.backLink:hover::before,
+.backLink:hover::after {
+  opacity: 1;
+}
+.backLink:hover svg {
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.15));
+}
+.backLink:active {
+  transform: scale(0.94);
+}
+
+/* SHELVED — not rendered anywhere right now, kept for a future pass.
+   "Fill sweep": traveling highlight, then a full brand-gradient fill (the
+   glass variant above was picked instead — this felt too close to
+   .primary's own hover gesture for a secondary action). To bring back:
+   swap .backLink → styles.btnFill on the Link in InvitePage.tsx. */
+.btnFill {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-family: Manrope, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  border: 1px solid #656565;
+  background: transparent;
+  color: #b3b3b3;
+  transition: border-color 300ms ease, color 300ms ease, transform 200ms ease;
+}
+.btnFill::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(230, 253, 70, 0.12), transparent);
+  transform: translateX(-100%);
+  transition: transform 500ms var(--ease-out);
+}
+.btnFill::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #e6fd46, #919d46);
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+.btnFill svg {
+  position: relative;
+  z-index: 1;
+  transition: color 300ms ease;
+}
+.btnFill:hover {
+  color: #000000;
+  border-color: #e6fd46;
+}
+.btnFill:hover::before {
+  transform: translateX(100%);
+}
+.btnFill:hover::after {
+  opacity: 1;
+}
+.btnFill:hover .btnLabel,
+.btnFill:hover svg {
+  color: #000000;
+}
+.btnFill:active {
+  transform: scale(0.94);
+}
