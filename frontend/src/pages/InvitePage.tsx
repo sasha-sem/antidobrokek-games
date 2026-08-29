@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getPublicSnapshot, joinRoom } from "../api/client";
 import { AnimatedBackdrop } from "../components/AnimatedBackdrop";
+import { useFieldErrors } from "../hooks/useFieldErrors";
 import type { RoomSnapshot } from "../types/events";
 import { getIdentity, tokenKey } from "../utils/identity";
 import homeStyles from "./HomePage.module.css";
@@ -16,6 +17,7 @@ export function InviteJoin({ code, onJoined }: { code: string; onJoined: (token:
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const nameErrors = useFieldErrors();
 
   useEffect(() => {
     let active = true;
@@ -25,8 +27,9 @@ export function InviteJoin({ code, onJoined }: { code: string; onJoined: (token:
     return () => { active = false; };
   }, [code]);
 
-  const join = async (event: FormEvent) => {
+  const join = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!nameErrors.validate(event.currentTarget)) return;
     setBusy(true);
     setError("");
     try {
@@ -60,14 +63,19 @@ export function InviteJoin({ code, onJoined }: { code: string; onJoined: (token:
               ) : null}
 
               {snapshot?.room.state === "LOBBY" ? (
-                <form onSubmit={join} className={styles.inviteForm}>
+                <form onSubmit={join} className={styles.inviteForm} noValidate>
                   <label className={homeStyles.field}>
                     <input
                       aria-label="Твоё имя"
+                      name="name"
                       value={name}
-                      onChange={(event) => setName(event.target.value.slice(0, 24))}
-                      placeholder="Введите имя"
+                      onChange={(event) => {
+                        setName(event.target.value.slice(0, 24));
+                        nameErrors.clear("name");
+                      }}
+                      placeholder={nameErrors.invalid.name ? "Заполните это поле" : "Введите имя"}
                       required
+                      data-invalid={nameErrors.invalid.name}
                     />
                   </label>
                   <button className={homeStyles.primary} disabled={busy}>
@@ -86,12 +94,7 @@ export function InviteJoin({ code, onJoined }: { code: string; onJoined: (token:
             </>
           )}
 
-          <Link to="/" className={styles.backLink}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M10 12L6 8L10 4" />
-            </svg>
-            <span className={styles.btnLabel}>На главную</span>
-          </Link>
+          <Link to="/" className={styles.backLink}>На главную</Link>
         </section>
       </div>
     </AnimatedBackdrop>

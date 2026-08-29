@@ -4,32 +4,377 @@
 .loader { width: 38px; height: 38px; border: 3px solid #30303f; border-top-color: #d8ff49; border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .error { color: #ff6d83 !important; }
-.linkButton, .primary, .secondary, .danger, .copy { min-height: 48px; border: 0; border-radius: 13px; padding: 0 22px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font: 800 1rem inherit; cursor: pointer; }
+.linkButton, .primary, .secondary, .danger { min-height: 48px; border: 0; border-radius: 13px; padding: 0 22px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font: 800 1rem inherit; cursor: pointer; }
 .primary, .linkButton { background: #d8ff49; color: #11130a; }
-.secondary, .copy { background: #292938; color: #fff; }
+.secondary { background: #292938; color: #fff; }
 .danger { background: #321923; color: #ff8b9e; border: 1px solid #5b2635; }
 .primary:disabled, .secondary:disabled { opacity: .35; cursor: not-allowed; }
-.lobby { width: min(1160px, calc(100% - 48px)); margin: 0 auto; min-height: 100vh; padding: 30px 0 50px; }
-.lobby > header, .gameHeader { height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.gameHeader { height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .logo { color: white; text-decoration: none; font-weight: 900; font-size: 1.35rem; letter-spacing: -.04em; }
 .logo span { color: #d8ff49; }
-.connection { color: #d8ff49; font-size: .8rem; text-transform: uppercase; letter-spacing: .12em; }
-.connection::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; margin-right: 8px; }
-.connection[data-status="reconnecting"] { color: #ffba4b; }
-.lobbyHero { text-align: center; padding: 54px 0 44px; }
-.lobbyHero p { margin: 0; color: #9795a8; }
-.lobbyHero h1 { margin: 12px 0 20px; font: 900 clamp(4.5rem, 10vw, 8rem)/1 monospace; letter-spacing: .12em; color: #d8ff49; }
-.lobbyHero > span { display: block; color: #77758b; margin-top: 15px; }
-.playerGrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-.playerGrid article { min-height: 132px; position: relative; border: 1px solid #333343; background: #171722; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; }
-.playerGrid b { color: #686678; font: 600 .8rem monospace; }
-.playerGrid h2 { margin: 12px 0; font-size: 1.15rem; overflow: hidden; text-overflow: ellipsis; }
-.playerGrid span { color: #d8ff49; font-size: .78rem; }
-.playerGrid article > button { position: absolute; right: 10px; top: 9px; border: 0; background: none; color: #77758b; font-size: 1.4rem; cursor: pointer; }
-.emptySlot { border-style: dashed !important; background: transparent !important; justify-content: space-between !important; }
-.emptySlot span { color: #5e5c6d !important; }
-.lobbyAction { margin-top: 34px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; text-align: center; }
-.lobbyAction p { flex-basis: 100%; color: #77758b; margin: 4px 0; }
+
+/* Lobby: real-time connection health, not static copy — status flips to
+   "Переподключение…" if the websocket drops, which matters a lot in a
+   synced multiplayer game. Kept, but quiet by default (small, muted) so
+   it doesn't compete for attention while everything's fine; it only
+   raises its voice (color + pulse) when there's an actual problem. */
+.connectionBadge {
+  position: fixed;
+  top: 22px;
+  right: 22px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(242, 242, 242, 0.14);
+  background: rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(242, 242, 242, 0.45);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: color 200ms ease, border-color 200ms ease;
+}
+.connectionBadge::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.connectionBadge[data-status="reconnecting"] {
+  color: #ffba4b;
+  border-color: rgba(255, 186, 74, 0.4);
+  animation: connectionPulse 1.4s ease-in-out infinite;
+}
+@keyframes connectionPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.lobbyHero {
+  text-align: center;
+}
+.lobbyEyebrow {
+  color: #b3b3b3 !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+}
+.lobbyCode {
+  margin: 10px 0 22px;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+  font-size: clamp(2.8rem, 9vw, 4.5rem);
+  letter-spacing: 0.1em;
+  color: #e6fd46;
+}
+.lobbyMeta {
+  margin: 18px 0 0;
+  color: #656565;
+  font-size: 13px;
+}
+
+/* Icon crossfades to a checkmark on copy (both svgs stacked via absolute
+   positioning inside a fixed-size box, toggled by [data-copied] on the
+   button) instead of swapping in a "✓" glyph inside the text — the label
+   still changes to say what happened, but the confirmation itself reads
+   as an icon state, not a punctuation mark stapled onto a sentence. */
+.copyButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  height: 46px;
+  padding: 0 20px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(242, 242, 242, 0.16);
+  background: transparent;
+  color: #b3b3b3;
+  font-family: Manrope, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, transform 140ms var(--ease-out);
+}
+.copyButton:hover {
+  border-color: rgba(242, 242, 242, 0.38);
+  color: #f2f2f2;
+}
+.copyButton:active {
+  transform: scale(0.97);
+}
+/* Same treatment as :hover, not a brand-color accent — "copied" is a
+   neutral confirmation, not a call to action. */
+.copyButton[data-copied="true"] {
+  border-color: rgba(242, 242, 242, 0.38);
+  color: #f2f2f2;
+}
+.copyIconStack {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.copyIconStack svg {
+  position: absolute;
+  inset: 0;
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+.copyIconDefault {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+.copyIconCheck {
+  opacity: 0;
+  transform: scale(0.5) rotate(-20deg);
+}
+.copyButton[data-copied="true"] .copyIconDefault {
+  opacity: 0;
+  transform: scale(0.5) rotate(20deg);
+}
+.copyButton[data-copied="true"] .copyIconCheck {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+.playerGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+/* Fade + rise on mount only (React keeps the DOM node across snapshot
+   re-renders as long as the player's `key` is stable, so this plays once
+   per genuine join, not on every unrelated lobby update). The stagger
+   comes from a per-index transition-delay set inline in GamePage.tsx —
+   same 250ms/ease-out entrance, offset 0–160ms across up to 5 slots. */
+.playerCard {
+  position: relative;
+  min-height: 132px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 20px;
+  border: 1px solid rgba(242, 242, 242, 0.08);
+  background: rgba(25, 25, 25, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 250ms var(--ease-out), transform 250ms var(--ease-out), border-color 400ms var(--ease-out);
+}
+@starting-style {
+  .playerCard {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+/* Plain fade-in on the card's own 1px border — no sweep, no separate
+   layer. [data-ready] only flips false→true and the card keeps its DOM
+   node across snapshot re-renders (stable `key`), so this transition
+   fires once, right when the player actually goes ready. */
+.playerCard[data-connected="true"][data-ready="true"] {
+  border-color: #e6fd46;
+}
+.playerNumber {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e6fd46;
+}
+.playerName {
+  margin: 10px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f2f2f2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.playerStatus {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: #656565;
+  transition: color 150ms ease;
+}
+.playerStatus[data-connected="true"] {
+  color: #b3b3b3;
+}
+.playerStatus[data-connected="true"][data-ready="true"] {
+  color: #e6fd46;
+}
+.kickButton {
+  position: absolute;
+  right: 10px;
+  top: 9px;
+  border: 0;
+  background: none;
+  color: #656565;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 160ms ease, transform 140ms var(--ease-out);
+}
+.kickButton:hover {
+  color: #ff9aac;
+}
+.kickButton:active {
+  transform: scale(0.9);
+}
+.emptySlot {
+  border-style: dashed;
+  border-color: rgba(242, 242, 242, 0.14);
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.emptySlot .playerNumber {
+  color: #656565;
+}
+.emptyLabel {
+  color: #656565;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.lobbyAction {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.lobbyHint {
+  flex-basis: 100%;
+  color: #656565;
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+.lobbyDanger {
+  min-height: 52px;
+  padding: 0 24px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255, 90, 120, 0.55);
+  background: transparent;
+  color: #ff9aac;
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, transform 140ms var(--ease-out);
+}
+.lobbyDanger:hover {
+  background: rgba(255, 90, 120, 0.1);
+  border-color: rgba(255, 90, 120, 0.8);
+}
+.lobbyDanger:active {
+  transform: scale(0.97);
+}
+
+/* "Приготовиться" — hold-to-confirm, not a tap, and not styled like
+   .primary's own hover-sweep: marking ready is a one-way action through
+   this UI (no "unready" control) that can start the game immediately,
+   even solo — see the comment on markReady/useHoldToConfirm in
+   GamePage.tsx. Same fill-reveal mechanic as .closeCurrent on Home, in
+   the brand accent instead of destructive red, since this one commits
+   to something rather than tearing it down. */
+/* Button and its post-ready replacement are stacked in the same grid cell
+   instead of one unmounting as the other mounts, so the slot's box never
+   changes size and nothing else in .lobbyAction reflows — they crossfade
+   in place instead of the layout jumping. */
+.readySlot {
+  position: relative;
+  display: grid;
+  align-items: center;
+  justify-items: center;
+}
+.readySlot > .readyButton,
+.readySlot > .readyDone {
+  grid-area: 1 / 1;
+}
+.readySlot[data-ready="false"] > .readyDone {
+  opacity: 0;
+  pointer-events: none;
+}
+.readySlot[data-ready="true"] > .readyButton {
+  opacity: 0;
+  pointer-events: none;
+}
+.readyButton {
+  position: relative;
+  overflow: hidden;
+  height: 52px;
+  padding: 0 28px;
+  border-radius: 12px;
+  white-space: nowrap;
+  border: 1.5px solid rgba(230, 253, 70, 0.6);
+  background: transparent;
+  color: #e6fd46;
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+  transition: border-color 160ms ease, color 200ms ease, transform 140ms var(--ease-out), opacity 220ms var(--ease-out);
+}
+.readyButton:hover {
+  border-color: #e6fd46;
+}
+.readyButton:active {
+  transform: scale(0.97);
+}
+.readyButton:disabled {
+  cursor: default;
+}
+/* Same full-strength fill .primary uses on hover (solid #e6fd46, not a
+   translucent tint) — text flips to black as it fills, so it reads
+   cleanly against the backdrop's own near-black tones once the bright
+   fill sweeps in underneath it, instead of sitting on top as dark grey. */
+.readyButton[data-holding="true"] {
+  color: #000000;
+}
+.readyFill {
+  position: absolute;
+  inset: 0;
+  background: #e6fd46;
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 200ms var(--ease-out);
+  pointer-events: none;
+}
+.readyFillActive {
+  clip-path: inset(0 0 0 0);
+  transition-timing-function: linear;
+}
+.readyLabel {
+  position: relative;
+  z-index: 1;
+}
+/* Not a button — it's inert (nothing to click once you're already ready),
+   so it doesn't get button chrome. The hover brighten is just a quiet
+   "this text is meaningful" cue, not a claim that it's interactive. */
+.readyDone {
+  margin: 0;
+  color: #b3b3b3;
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  transition: color 200ms ease, opacity 220ms var(--ease-out);
+}
+.readyDone:hover {
+  color: #f2f2f2;
+}
+
 .game { min-height: 100vh; width: min(1500px, calc(100% - 40px)); margin: 0 auto; padding: 12px 0 24px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 12px; }
 .gameHeader { border-bottom: 1px solid #2b2b38; }
 .gameHeader > span:last-child { color: #77758b; font-size: .85rem; }
@@ -69,11 +414,10 @@
 .kicker { color: #d8ff49 !important; text-transform: uppercase; letter-spacing: .16em; }
 .winner { color: #d8ff49; font-size: clamp(2.5rem, 8vw, 6rem); font-weight: 900; letter-spacing: -.05em; margin-bottom: 20px; }
 @media (max-width: 768px) {
-  .lobby { width: calc(100% - 24px); }
-  .lobbyHero { padding: 35px 0 28px; }
-  .lobbyHero h1 { font-size: clamp(3.2rem, 18vw, 5rem); }
+  .lobbyCode { font-size: clamp(2.4rem, 14vw, 3.6rem); }
   .playerGrid { grid-template-columns: 1fr 1fr; }
-  .playerGrid article { min-height: 110px; }
+  .playerCard { min-height: 110px; }
+  .connectionBadge { top: 14px; right: 14px; }
   .game { width: calc(100% - 18px); grid-template-rows: auto auto auto; }
   .gameHeader { display: grid; height: auto; padding: 10px 0; grid-template-columns: 1fr auto; }
   .gameHeader > span:last-child { display: none; }
@@ -85,4 +429,16 @@
   .answers button, .reactions button { min-height: 50px; min-width: 0; }
   .reactions { flex-wrap: wrap; }
   .revealBanner strong { font-size: 2.3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .playerCard {
+    transition-duration: 0.01ms !important;
+  }
+  .connectionBadge[data-status="reconnecting"] {
+    animation: none !important;
+  }
+  .readyFillActive {
+    transition-duration: 1ms !important;
+  }
 }

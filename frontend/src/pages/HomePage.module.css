@@ -173,6 +173,39 @@
   letter-spacing: 0.14em;
 }
 
+@keyframes fieldShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+/* Replaces the native "fill out this field" bubble across every form in
+   the app (this file is imported by InvitePage.tsx too, so its name
+   field gets this for free) — no color change at all, just the message
+   itself (same muted gray as any other placeholder, e.g. "Саша"/"Введите
+   имя") and a shake, which is attention-getting enough on its own without
+   an alarm color. The message lives in the field's own (empty, so
+   otherwise-unused) placeholder rather than a separate caption. Driven by
+   useFieldErrors' `invalid` state via data-invalid; the hook toggles it
+   off/on across a frame on every failed submit (not just the first) so
+   the shake replays each time, cleared the moment the field is touched
+   again. */
+.field input[data-invalid="true"] {
+  animation: fieldShake 320ms var(--ease-out);
+}
+/* .codeInput's monospace + letter-spacing is meant for the 6-character
+   room code itself, not this full sentence — without this override the
+   error message inherits it too and reads noticeably larger/wider than
+   every other field's placeholder. */
+.codeInput[data-invalid="true"]::placeholder {
+  font-family: Manrope, sans-serif;
+  letter-spacing: normal;
+}
+.file[data-invalid="true"] {
+  animation: fieldShake 320ms var(--ease-out);
+}
+
 .primary {
   height: 52px;
   padding: 0 28px;
@@ -262,9 +295,29 @@
 }
 .hostCard form {
   display: grid;
-  grid-template-columns: 1.3fr 1.3fr 1fr auto;
+  grid-template-columns: 1.2fr 1.3fr 1.2fr;
+  /* The middle row is always exactly the same 18px the gap between fields
+     and buttons would be anyway — it's the .progress bar's permanent slot.
+     Mounting/unmounting that bar never resizes this row, so the button row
+     stays put whether or not an upload is in flight. */
+  grid-template-rows: auto 18px auto;
   align-items: end;
-  gap: 18px;
+  column-gap: 18px;
+  row-gap: 0;
+}
+/* Shares the secret field's own column, leaving the file column's width
+   empty above — .primary itself stays plain (used unmodified all over the
+   app); grid-column and justify-self here are no-ops wherever this form's
+   grid isn't the parent, same reasoning as .closeCurrent's own placement
+   below. grid-row is pinned explicitly (not "auto") because without it,
+   whenever .progress isn't mounted to claim row 2, auto-placement finds
+   row 2 free (row 1 is full of fields) and puts these buttons there
+   instead of row 3 — squeezed into a fixed 18px track and overlapping the
+   fields above it. */
+.hostSubmit {
+  grid-column: 1;
+  grid-row: 3;
+  justify-self: stretch;
 }
 .file {
   position: relative;
@@ -389,12 +442,27 @@
 .rangeInput:focus-visible ~ .rangeThumb {
   box-shadow: 0 0 0 3px rgba(230, 253, 70, 0.4), 0 2px 6px rgba(0, 0, 0, 0.35);
 }
+/* Lives in the grid's own always-present 18px row (row 2 of
+   .hostCard form's template) instead of an ad-hoc row of its own —
+   mounting/unmounting it never changes row heights or button position,
+   since that track exists whether or not anything occupies it. That's
+   also why show/hide only needs a plain opacity transition rather than
+   height/transform tricks to dodge a layout jump — see .progressLeaving,
+   set by HomePage.tsx's dismissProgress() when upload fails or the room
+   gets closed, so a stuck bar can't survive either. */
 .progress {
+  grid-row: 2;
   grid-column: 1 / -1;
+  align-self: center;
   height: 4px;
   border-radius: 4px;
   background: rgba(242, 242, 242, 0.12);
   overflow: hidden;
+  opacity: 1;
+  transition: opacity 200ms var(--ease-out);
+}
+.progressLeaving {
+  opacity: 0;
 }
 .progress span {
   display: block;
@@ -405,11 +473,14 @@
 .closeCurrent {
   position: relative;
   overflow: hidden;
-  /* Same "auto" column as .primary above it (not grid-column: 1 / -1
-     shrunk to its own text) — an auto-sized grid track is shared across
-     every row that uses it, so pinning both buttons to column 4 forces
-     them to the same width instead of each sizing to its own label. */
-  grid-column: 4;
+  /* Pinned to the range-slider's own column (not grid-column: 1 / -1
+     shrunk to its own text) — a shared grid track forces this button to
+     the same width as the duration control above it. grid-row: 3 for the
+     same reason as .hostSubmit's — without it, auto-placement lands here
+     in row 2 (the .progress bar's reserved row) whenever progress isn't
+     mounted, since row 1 is already full. */
+  grid-column: 3;
+  grid-row: 3;
   justify-self: stretch;
   height: 52px;
   padding: 0 28px;
@@ -469,6 +540,17 @@
   border-radius: 14px;
   font-size: 14px;
 }
+/* Auto-dismisses a few seconds after appearing (see dismissNotice() in
+   HomePage.tsx) — unlike .error, which sticks around since it's
+   actionable/needs to be read at leisure, a plain confirmation like this
+   should just go away on its own instead of sitting there forever. */
+.notice {
+  opacity: 1;
+  transition: opacity 200ms var(--ease-out);
+}
+.noticeLeaving {
+  opacity: 0;
+}
 .notice {
   border: 1px solid rgba(145, 157, 70, 0.6);
   background: rgba(25, 33, 15, 0.92);
@@ -503,6 +585,25 @@
   .joinForm,
   .hostCard form {
     grid-template-columns: 1fr;
+    /* The desktop template's dedicated 18px progress-bar row only makes
+       sense next to the fixed 3-row (fields/progress/buttons) structure —
+       stacked single-column mobile just needs every item on its own auto
+       row with normal spacing. */
+    grid-template-rows: auto;
+    row-gap: 18px;
+  }
+  /* Reset the desktop grid's explicit placement — otherwise these
+     reference rows/columns that no longer exist on a single-column grid,
+     and the browser creates implicit tracks that squeeze both buttons
+     side by side, or collide .progress with whatever auto-flows into its
+     row, instead of stacking everything full-width in document order. */
+  .hostSubmit,
+  .closeCurrent {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .progress {
+    grid-row: auto;
   }
   .hostEntry {
     grid-template-columns: 1fr;
@@ -530,5 +631,9 @@
      held) without the traveling-fill motion. */
   .closeFillActive {
     transition-duration: 1ms !important;
+  }
+  .field input[data-invalid="true"],
+  .file[data-invalid="true"] {
+    animation: none !important;
   }
 }

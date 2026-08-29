@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { AnimatedBackdrop } from "../components/AnimatedBackdrop";
 import { Scoreboard } from "../components/Scoreboard";
+import { useHoldToConfirm, HOLD_CONFIRM_MS } from "../hooks/useHoldToConfirm";
 import { useRoomSocket } from "../hooks/useRoomSocket";
 import { useSynchronizedPlayback } from "../hooks/useSynchronizedPlayback";
 import type { Author, CurrentQuestion, RoomSnapshot, ScoreRow, ServerEnvelope } from "../types/events";
 import { tokenKey } from "../utils/identity";
 import { InviteJoin } from "./InvitePage";
+import homeStyles from "./HomePage.module.css";
 import styles from "./GamePage.module.css";
 
 interface RevealPayload {
@@ -24,7 +27,6 @@ function Connection({ code, role, token }: { code: string; role: "host" | "playe
   const [reaction, setReaction] = useState<-1 | 1 | null>(null);
   const [accepted, setAccepted] = useState(false);
   const [mediaReady, setMediaReady] = useState(new Set<string>());
-  const [soundUnlocked, setSoundUnlocked] = useState(role === "host");
   const [error, setError] = useState("");
   const [videoError, setVideoError] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -173,25 +175,48 @@ function Connection({ code, role, token }: { code: string; role: "host" | "playe
     if (role === "player") send("player_media_ready");
   };
 
-  const unlockSound = async () => {
+  // A browser won't autoplay-with-sound video that no click ever primed —
+  // and the round's video is started by a server-scheduled timer, not a
+  // click. This "plays" a silent 0.01s tone to spend that one required
+  // gesture ahead of time, riding on whatever click the player makes next
+  // (here, "Готов") rather than needing a click of its own. Best-effort: if
+  // it fails, the question screen's own muted-autoplay-then-manual-unmute
+  // fallback (autoplayMuted) still covers it, so nothing here blocks ready.
+  const primeAudioUnlock = async () => {
     try {
       const AudioContextClass = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioContextClass) {
-        const context = new AudioContextClass();
-        await context.resume();
-        const oscillator = context.createOscillator();
-        const gain = context.createGain();
-        gain.gain.value = 0;
-        oscillator.connect(gain);
-        gain.connect(context.destination);
-        oscillator.start();
-        oscillator.stop(context.currentTime + 0.01);
-      }
-      setSoundUnlocked(true);
+      if (!AudioContextClass) return;
+      const context = new AudioContextClass();
+      await context.resume();
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      gain.gain.value = 0;
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start();
+      oscillator.stop(context.currentTime + 0.01);
     } catch {
-      setError("Не удалось подготовить звук");
+      // Silently ignored — see comment above.
     }
   };
+
+  // Set the instant the hold completes, ahead of the server's confirmation
+  // round-trip. Without this, `readying` (which drops to false the moment
+  // the hold timer fires) would let the fill's clip-path snap back to
+  // empty for the gap before `room_snapshot` confirms is_ready — a visible
+  // flash-back right before the button crossfades into the "done" text.
+  const [justReadied, setJustReadied] = useState(false);
+  const markReady = () => {
+    void primeAudioUnlock();
+    setJustReadied(true);
+    send("player_ready", { ready: true });
+  };
+  // Marking ready is effectively one-way through this UI (no "unready"
+  // control) and, once every connected player has done it, starts the
+  // game immediately — including with just one player, if they're alone
+  // in the room. A hold, not a tap, matches how consequential that is.
+  const { holding: readying, start: startReady, cancel: cancelReady } = useHoldToConfirm(markReady);
+  const readyFilled = readying || justReadied;
 
   const copyInvite = async () => {
     const invite = `${location.origin}/room/${code}`;
@@ -235,29 +260,111 @@ function Connection({ code, role, token }: { code: string; role: "host" | "playe
 
   if (state === "LOBBY") {
     return (
-      <main className={styles.lobby}>
-        <header><Link to="/" className={styles.logo}>Доброкек<span>.</span></Link><div className={styles.connection} data-status={status}>{status === "connected" ? "В сети" : "Переподключение…"}</div></header>
-        <section className={styles.lobbyHero}>
-          <p>{snapshot.pack.title}</p>
-          <h1>{code}</h1>
-          <button className={styles.copy} onClick={copyInvite}>{copied ? "Ссылка скопирована ✓" : "Скопировать приглашение"}</button>
-          <span>{snapshot.pack.question_count} вопросов · {snapshot.players.length}/5 игроков</span>
+      <AnimatedBackdrop
+        overlays={
+          <>
+            <div className={styles.connectionBadge} data-status={status} role="status">
+              {status === "connected" ? "В сети" : "Переподключение…"}
+            </div>
+            {error ? <div role="alert" className={styles.toast}>{error}</div> : null}
+          </>
+        }
+      >
+        <section className={`${homeStyles.glassCard} ${styles.lobbyHero}`}>
+          <p className={`${homeStyles.eyebrow} ${styles.lobbyEyebrow}`}>{snapshot.pack.title}</p>
+          <h1 className={styles.lobbyCode}>{code}</h1>
+          <button type="button" className={styles.copyButton} data-copied={copied} onClick={copyInvite}>
+            <span className={styles.copyIconStack} aria-hidden="true">
+              <svg className={styles.copyIconDefault} width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                <path d="M3.5 10.5H2.5C1.94772 10.5 1.5 10.0523 1.5 9.5V2.5C1.5 1.94772 1.94772 1.5 2.5 1.5H9.5C10.0523 1.5 10.5 1.94772 10.5 2.5V3.5" stroke="currentColor" strokeWidth="1.4" />
+              </svg>
+              <svg className={styles.copyIconCheck} width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 8.5L6.2 11.5L13 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span className={styles.copyLabel}>{copied ? "Скопировано" : "Скопировать приглашение"}</span>
+          </button>
+          <p className={styles.lobbyMeta}>{snapshot.pack.question_count} вопросов · {snapshot.players.length}/5 игроков</p>
         </section>
-        <section className={styles.playerGrid}>
-          {snapshot.players.map((item, index) => <article key={item.id}><b>{String(index + 1).padStart(2, "0")}</b><h2>{item.display_name}</h2><span>{item.is_connected ? (item.is_ready ? "Готов" : "Не готов") : "Не в сети"}</span>{role === "host" ? <button onClick={() => send("host_kick_player", { player_id: item.id })} aria-label={`Удалить ${item.display_name}`}>×</button> : null}</article>)}
-          {Array.from({ length: Math.max(0, 5 - snapshot.players.length) }, (_, index) => <article key={`empty-${index}`} className={styles.emptySlot}><b>{String(snapshot.players.length + index + 1).padStart(2, "0")}</b><span>Свободно</span></article>)}
-        </section>
+
+        <div className={styles.playerGrid}>
+          {snapshot.players.map((item, index) => (
+            <article
+              key={item.id}
+              className={styles.playerCard}
+              data-connected={item.is_connected}
+              data-ready={item.is_ready}
+              style={{ transitionDelay: `${Math.min(index, 4) * 40}ms` }}
+            >
+              <b className={styles.playerNumber}>{String(index + 1).padStart(2, "0")}</b>
+              <h2 className={styles.playerName}>{item.display_name}</h2>
+              <span className={styles.playerStatus} data-connected={item.is_connected} data-ready={item.is_ready}>
+                {item.is_connected ? (item.is_ready ? "Готов" : "Не готов") : "Не в сети"}
+              </span>
+              {role === "host" ? (
+                <button className={styles.kickButton} onClick={() => send("host_kick_player", { player_id: item.id })} aria-label={`Удалить ${item.display_name}`}>
+                  ×
+                </button>
+              ) : null}
+            </article>
+          ))}
+          {Array.from({ length: Math.max(0, 5 - snapshot.players.length) }, (_, index) => (
+            <article key={`empty-${index}`} className={`${styles.playerCard} ${styles.emptySlot}`}>
+              <b className={styles.playerNumber}>{String(snapshot.players.length + index + 1).padStart(2, "0")}</b>
+              <span className={styles.emptyLabel}>Свободно</span>
+            </article>
+          ))}
+        </div>
+
         <section className={styles.lobbyAction}>
-          {role === "player" ? <>
-            {!soundUnlocked ? <button className={styles.primary} onClick={unlockSound}>🔊 Включить звук и подготовиться</button> : <button className={styles.primary} disabled={ownPlayer?.is_ready} onClick={() => send("player_ready", { ready: true })}>{ownPlayer?.is_ready ? "Готово — ждём остальных" : "Готов"}</button>}
-            <p>{ownPlayer?.is_ready ? "Игра начнётся автоматически, когда все подключённые игроки будут готовы" : "Сначала включи звук, затем нажми «Готов» после того, как друзья войдут"}</p>
-          </> : <>
-            <button className={styles.primary} disabled={!snapshot.players.length || snapshot.players.some((item) => item.is_connected && !item.is_ready)} onClick={() => send("host_start_game")}>Начать игру</button>
-            <button className={styles.danger} onClick={() => send("host_close_room")}>Закрыть</button>
-          </>}
+          {role === "player" ? (
+            <>
+              <div className={styles.readySlot} data-ready={Boolean(ownPlayer?.is_ready)}>
+                <button
+                  type="button"
+                  className={styles.readyButton}
+                  data-holding={readyFilled}
+                  disabled={Boolean(ownPlayer?.is_ready)}
+                  onPointerDown={startReady}
+                  onPointerUp={cancelReady}
+                  onPointerLeave={cancelReady}
+                  onPointerCancel={cancelReady}
+                  onKeyDown={(e) => {
+                    if ((e.key === "Enter" || e.key === " ") && !e.repeat) {
+                      e.preventDefault();
+                      startReady();
+                    }
+                  }}
+                  onKeyUp={(e) => {
+                    if (e.key === "Enter" || e.key === " ") cancelReady();
+                  }}
+                >
+                  <span
+                    className={readyFilled ? `${styles.readyFill} ${styles.readyFillActive}` : styles.readyFill}
+                    style={readying ? { transitionDuration: `${HOLD_CONFIRM_MS}ms` } : undefined}
+                    aria-hidden="true"
+                  />
+                  <span className={styles.readyLabel}>Приготовиться</span>
+                </button>
+                <p className={styles.readyDone}>Готово — ждём остальных</p>
+              </div>
+              <p className={styles.lobbyHint}>
+                {ownPlayer?.is_ready
+                  ? "Игра начнётся автоматически, когда все подключённые игроки будут готовы"
+                  : "Дождись друзей — игра начнётся сразу, как только приготовишься"}
+              </p>
+            </>
+          ) : (
+            <>
+              <button className={homeStyles.primary} disabled={!snapshot.players.length || snapshot.players.some((item) => item.is_connected && !item.is_ready)} onClick={() => send("host_start_game")}>
+                Начать игру
+              </button>
+              <button className={styles.lobbyDanger} onClick={() => send("host_close_room")}>Закрыть</button>
+            </>
+          )}
         </section>
-        {error ? <div role="alert" className={styles.toast}>{error}</div> : null}
-      </main>
+      </AnimatedBackdrop>
     );
   }
 

@@ -57,30 +57,17 @@
   text-align: left;
 }
 
-/* Shared by every icon+text button on this page (currently just
-   .backLink, plus the shelved .btnFill below) — keeps label/icon above
-   the pseudo-element layers each variant paints its hover effect on. */
-.btnLabel {
-  position: relative;
-  z-index: 1;
-}
-
-/* "На главную" — the chosen variant (glass): a frosted panel that lights
-   up on hover. Picked over a left-to-right fill sweep (too close to
-   .primary's own "submit" gesture — see the shelved .btnFill below) and
-   an underline-sweep text link (dropped entirely).
-   border-radius: 12px, not the pasted reference's 999px pill — every other
-   text button in the app (.primary, .secondary, .closeCurrent) uses 12px;
-   a pill here would be the one shape-inconsistent button on the page. */
+/* "На главную" — plain text, no button chrome (border/pill/glass all
+   dropped; see the shelved .btnFill below for that road not taken).
+   Two states only, each mapped to the matching category in the
+   animate-skill decision table: hover is a color change → `ease`;
+   press is feedback on a pressable element → the same scale(0.97) +
+   ease-out used on every other button in the app, so a bare text link
+   still answers to a touch/click the same way everything else does. */
 .backLink {
-  position: relative;
-  overflow: hidden;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  display: inline-block;
   margin-top: 18px;
-  padding: 10px 22px;
-  border-radius: 12px;
+  color: #b3b3b3;
   font-family: Manrope, sans-serif;
   font-size: 13px;
   font-weight: 600;
@@ -88,54 +75,13 @@
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  color: #b3b3b3;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  transition: border-color 300ms ease, color 300ms ease, transform 200ms ease, background 300ms ease,
-    box-shadow 300ms ease;
-}
-.backLink::before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 50%, rgba(230, 253, 70, 0.04));
-  opacity: 0;
-  transition: opacity 400ms ease;
-}
-.backLink::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  border-radius: 12px;
-  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.12), transparent 70%);
-  opacity: 0;
-  transition: opacity 400ms ease;
-}
-.backLink svg {
-  position: relative;
-  z-index: 1;
-  transition: filter 300ms ease;
+  transition: color 200ms ease, transform 140ms var(--ease-out);
 }
 .backLink:hover {
   color: #f2f2f2;
-  border-color: rgba(230, 253, 70, 0.3);
-  background: rgba(230, 253, 70, 0.05);
-  box-shadow: 0 0 40px rgba(230, 253, 70, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-.backLink:hover::before,
-.backLink:hover::after {
-  opacity: 1;
-}
-.backLink:hover svg {
-  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.15));
 }
 .backLink:active {
-  transform: scale(0.94);
+  transform: scale(0.97);
 }
 
 /* SHELVED — not rendered anywhere right now, kept for a future pass.
