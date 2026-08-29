@@ -344,17 +344,23 @@
 .readyButton[data-holding="true"] {
   color: #000000;
 }
+/* No transition on the base (inactive) state — releasing snaps the fill
+   back to empty instantly rather than animating it. A fast repeated
+   press/release used to interrupt that snap-back mid-flight, so the next
+   1000ms fill would start from wherever it got interrupted (e.g. 70%
+   already full) and still take the full 1000ms to cover the remaining
+   30% — reading as if it had suddenly stalled. Instant reset means every
+   fill always starts from a true, guaranteed 0%. */
 .readyFill {
   position: absolute;
   inset: 0;
   background: #e6fd46;
   clip-path: inset(0 100% 0 0);
-  transition: clip-path 200ms var(--ease-out);
   pointer-events: none;
 }
 .readyFillActive {
   clip-path: inset(0 0 0 0);
-  transition-timing-function: linear;
+  transition: clip-path var(--hold-confirm-ms, 1000ms) linear;
 }
 .readyLabel {
   position: relative;
@@ -408,7 +414,6 @@
 .reactions button[data-active="true"] { border-color: #d8ff49; background: #293015; }
 .autoNext { min-height: 54px; margin: 0; padding: 0 14px; display: flex; align-items: center; color: #aaa8bb; font-weight: 700; }
 .network { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); background: #654513; color: #ffe0a3; padding: 10px 18px; border-radius: 10px; z-index: 20; }
-.toast { position: fixed; right: 20px; bottom: 20px; max-width: 440px; background: #361923; color: #ffdbe1; border: 1px solid #6c2a3b; border-radius: 14px; padding: 15px 20px; z-index: 30; cursor: pointer; }
 .final { width: min(760px, 100% - 32px); margin: 0 auto; }
 .final > aside { width: 100%; box-sizing: border-box; }
 .kicker { color: #d8ff49 !important; text-transform: uppercase; letter-spacing: .16em; }

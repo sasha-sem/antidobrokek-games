@@ -511,26 +511,41 @@
 }
 /* Hold-to-confirm fill: replaces a native window.confirm() with a tactile
    press-and-hold. clip-path (not width) so it stays GPU-composited; linear
-   while filling (a deliberate, timed action), fast ease-out snap-back if
-   released early — the same asymmetry as a hold-to-delete pattern. */
+   while filling (a deliberate, timed action). No transition on the base
+   (inactive) state — releasing snaps the fill back to empty instantly
+   rather than animating it back. That used to be an animated snap-back,
+   but a fast repeated press/release would interrupt it mid-flight, so the
+   next fill started from wherever it got interrupted and still took the
+   full duration to cover a shorter remaining distance — reading as if it
+   had suddenly stalled. Instant reset means every fill always starts from
+   a true, guaranteed 0%. */
 .closeFill {
   position: absolute;
   inset: 0;
   background: rgba(255, 90, 120, 0.4);
   clip-path: inset(0 100% 0 0);
-  transition: clip-path 200ms var(--ease-out);
   pointer-events: none;
 }
 .closeFillActive {
   clip-path: inset(0 0 0 0);
-  transition-timing-function: linear;
+  transition: clip-path var(--hold-confirm-ms, 1000ms) linear;
 }
 .closeLabel {
   position: relative;
 }
 
-.notice,
-.error {
+/* Shared toast shell — used by GamePage too via homeStyles.toast, so
+   every self-dismissing notification in the app (success or error) looks
+   and moves the same way. No fill, just an outline in the type's color;
+   the text itself stays the app's one standard color regardless of type
+   — only the border says "success" or "error". Auto-dismisses on its own
+   (see useAutoDismiss) rather than sitting there forever; slides up +
+   fades both in and out, matching how a desktop OS notification enters
+   and leaves its corner. `ease` (not ease-out) and a slightly longer
+   400ms, per this app's animate skill: toasts read as calmer/more
+   composed with motion tuned slightly slower than the general UI budget,
+   the same reasoning Sonner's timing is built on. */
+.toast {
   position: fixed;
   right: 24px;
   bottom: 24px;
@@ -539,27 +554,28 @@
   padding: 16px 20px;
   border-radius: 14px;
   font-size: 14px;
-}
-/* Auto-dismisses a few seconds after appearing (see dismissNotice() in
-   HomePage.tsx) — unlike .error, which sticks around since it's
-   actionable/needs to be read at leisure, a plain confirmation like this
-   should just go away on its own instead of sitting there forever. */
-.notice {
+  background: transparent;
+  color: #f2f2f2;
+  cursor: pointer;
   opacity: 1;
-  transition: opacity 200ms var(--ease-out);
+  transform: translateY(0);
+  transition: opacity 400ms ease, transform 400ms ease;
 }
-.noticeLeaving {
+@starting-style {
+  .toast {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+.toastLeaving {
   opacity: 0;
+  transform: translateY(16px);
 }
-.notice {
-  border: 1px solid rgba(145, 157, 70, 0.6);
-  background: rgba(25, 33, 15, 0.92);
-  color: #e9ffc2;
+.toastSuccess {
+  border: 1px solid rgba(230, 253, 70, 0.5);
 }
-.error {
-  border: 1px solid rgba(255, 84, 112, 0.6);
-  background: rgba(53, 25, 35, 0.92);
-  color: #ffdce2;
+.toastError {
+  border: 1px solid rgba(255, 90, 120, 0.55);
 }
 
 @keyframes shine {
@@ -635,5 +651,8 @@
   .field input[data-invalid="true"],
   .file[data-invalid="true"] {
     animation: none !important;
+  }
+  .toast {
+    transition-duration: 0.01ms !important;
   }
 }

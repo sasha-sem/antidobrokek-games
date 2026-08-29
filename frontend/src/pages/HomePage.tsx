@@ -1,9 +1,10 @@
-import { DragEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { DragEvent, FormEvent, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 import { assertNoActiveRoom, closeCurrentRoom, createRoom, joinRoom } from "../api/client";
 import { getIdentity, tokenKey } from "../utils/identity";
 import { AnimatedBackdrop } from "../components/AnimatedBackdrop";
 import { BrandLogo } from "../components/BrandLogo";
+import { useAutoDismiss } from "../hooks/useAutoDismiss";
 import { useFieldErrors } from "../hooks/useFieldErrors";
 import { useHoldToConfirm, HOLD_CONFIRM_MS } from "../hooks/useHoldToConfirm";
 import styles from "./HomePage.module.css";
@@ -29,16 +30,10 @@ export function HomePage() {
   // "Загрузка… N%" text and the progress bar's visibility — see host().
   const [busyVisible, setBusyVisible] = useState(false);
   const progressShownRef = useRef(false);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [noticeLeaving, setNoticeLeaving] = useState(false);
-  // Mirrors `notice`, read synchronously — dismissNotice() is called from
-  // inside a setTimeout closure captured back when the timer was
-  // scheduled, so `notice` there would be whatever it was at that render
-  // (i.e. stale), not the current value. A ref sidesteps that.
-  const noticeTextRef = useRef("");
-  const noticeHideTimer = useRef<number | null>(null);
-  const noticeDismissTimer = useRef<number | null>(null);
+  const error = useAutoDismiss();
+  // Shorter display than the default — a plain confirmation, read once
+  // and done with, doesn't need as long on screen as an error might.
+  const notice = useAutoDismiss(3200);
   const [fileActive, setFileActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const joinErrors = useFieldErrors();
@@ -55,26 +50,8 @@ export function HomePage() {
   useEffect(() => {
     return () => {
       if (progressHideTimer.current !== null) window.clearTimeout(progressHideTimer.current);
-      if (noticeHideTimer.current !== null) window.clearTimeout(noticeHideTimer.current);
-      if (noticeDismissTimer.current !== null) window.clearTimeout(noticeDismissTimer.current);
     };
   }, []);
-
-  // "Комната закрыта" had nothing that ever cleared it — unlike the error
-  // toast (superseded by the next action, or read at leisure since it's
-  // actionable) a plain confirmation like this should just go away on its
-  // own. Fades out, then unmounts once the fade's done, same shape as
-  // dismissProgress() below.
-  const dismissNotice = () => {
-    if (!noticeTextRef.current || noticeHideTimer.current !== null) return;
-    setNoticeLeaving(true);
-    noticeHideTimer.current = window.setTimeout(() => {
-      noticeTextRef.current = "";
-      setNotice("");
-      setNoticeLeaving(false);
-      noticeHideTimer.current = null;
-    }, 200);
-  };
 
   // Upload failing after the browser already finished sending the file
   // (server rejects with e.g. "room already exists") or the room getting
@@ -133,7 +110,7 @@ export function HomePage() {
   const join = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!joinErrors.validate(event.currentTarget)) return;
-    setError("");
+    error.clear();
     setBusy(true);
     const normalizedCode = code.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
     try {
@@ -141,7 +118,7 @@ export function HomePage() {
       sessionStorage.setItem(tokenKey("player", normalizedCode), result.reconnect_token);
       navigate(`/room/${normalizedCode}`);
     } catch (caught) {
-      setError(errorMessage(caught));
+      error.show(errorMessage(caught));
     } finally {
       setBusy(false);
     }
@@ -158,7 +135,7 @@ export function HomePage() {
     // synchronously, so the second call sees the first's guard immediately.
     if (!pack || hostInFlight.current) return;
     hostInFlight.current = true;
-    setError("");
+    error.clear();
     setBusy(true);
     // Debounced "busy" UI: don't show "Загрузка…"/the progress bar at all
     // for a request that settles within ~180ms — e.g. the active-room
@@ -187,7 +164,7 @@ export function HomePage() {
       sessionStorage.setItem(tokenKey("host", result.room_code), result.host_token);
       navigate(result.player_url);
     } catch (caught) {
-      setError(errorMessage(caught));
+      error.show(errorMessage(caught));
       dismissProgress();
     } finally {
       window.clearTimeout(busyTimer);
@@ -198,30 +175,15 @@ export function HomePage() {
   };
 
   const closeCurrent = async () => {
-    setError("");
-    noticeTextRef.current = "";
-    setNotice("");
-    setNoticeLeaving(false);
-    if (noticeHideTimer.current !== null) {
-      window.clearTimeout(noticeHideTimer.current);
-      noticeHideTimer.current = null;
-    }
-    if (noticeDismissTimer.current !== null) {
-      window.clearTimeout(noticeDismissTimer.current);
-      noticeDismissTimer.current = null;
-    }
+    error.clear();
+    notice.clear();
     setBusy(true);
     dismissProgress();
     try {
       await closeCurrentRoom(hostSecret);
-      noticeTextRef.current = "Текущая комната закрыта. Теперь можно создать новую игру.";
-      setNotice(noticeTextRef.current);
-      noticeDismissTimer.current = window.setTimeout(() => {
-        noticeDismissTimer.current = null;
-        dismissNotice();
-      }, 3200);
+      notice.show("Текущая комната закрыта. Теперь можно создать новую игру.");
     } catch (caught) {
-      setError(errorMessage(caught));
+      error.show(errorMessage(caught));
     } finally {
       setBusy(false);
     }
@@ -237,12 +199,32 @@ export function HomePage() {
     <AnimatedBackdrop
       overlays={
         <>
-          {notice ? (
-            <div role="status" className={noticeLeaving ? `${styles.notice} ${styles.noticeLeaving}` : styles.notice}>
-              {notice}
+          {notice.text ? (
+            <div
+              role="status"
+              className={
+                notice.leaving
+                  ? `${styles.toast} ${styles.toastSuccess} ${styles.toastLeaving}`
+                  : `${styles.toast} ${styles.toastSuccess}`
+              }
+              onClick={() => notice.dismiss()}
+            >
+              {notice.text}
             </div>
           ) : null}
-          {error ? <div role="alert" className={styles.error}>{error}</div> : null}
+          {error.text ? (
+            <div
+              role="alert"
+              className={
+                error.leaving
+                  ? `${styles.toast} ${styles.toastError} ${styles.toastLeaving}`
+                  : `${styles.toast} ${styles.toastError}`
+              }
+              onClick={() => error.dismiss()}
+            >
+              {error.text}
+            </div>
+          ) : null}
         </>
       }
     >
@@ -396,7 +378,7 @@ export function HomePage() {
               >
                 <span
                   className={closing ? `${styles.closeFill} ${styles.closeFillActive}` : styles.closeFill}
-                  style={closing ? { transitionDuration: `${HOLD_CONFIRM_MS}ms` } : undefined}
+                  style={{ "--hold-confirm-ms": `${HOLD_CONFIRM_MS}ms` } as CSSProperties}
                   aria-hidden="true"
                 />
                 <span className={styles.closeLabel}>Закрыть комнату</span>

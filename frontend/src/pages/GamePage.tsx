@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AnimatedBackdrop } from "../components/AnimatedBackdrop";
 import { Scoreboard } from "../components/Scoreboard";
+import { useAutoDismiss } from "../hooks/useAutoDismiss";
 import { useHoldToConfirm, HOLD_CONFIRM_MS } from "../hooks/useHoldToConfirm";
 import { useRoomSocket } from "../hooks/useRoomSocket";
 import { useSynchronizedPlayback } from "../hooks/useSynchronizedPlayback";
@@ -27,7 +28,7 @@ function Connection({ code, role, token }: { code: string; role: "host" | "playe
   const [reaction, setReaction] = useState<-1 | 1 | null>(null);
   const [accepted, setAccepted] = useState(false);
   const [mediaReady, setMediaReady] = useState(new Set<string>());
-  const [error, setError] = useState("");
+  const error = useAutoDismiss();
   const [videoError, setVideoError] = useState(false);
   const [copied, setCopied] = useState(false);
   const [ownPlayerId, setOwnPlayerId] = useState<string | null>(null);
@@ -113,13 +114,13 @@ function Connection({ code, role, token }: { code: string; role: "host" | "playe
         popular_meme: payload.popular_meme as RoomSnapshot["popular_meme"],
       } : previous);
     } else if (event.type === "player_kicked") {
-      setError("Ведущий удалил вас из комнаты");
+      error.show("Ведущий удалил вас из комнаты");
     } else if (event.type === "room_state_changed" && payload.state === "CLOSED") {
-      setError("Ведущий закрыл комнату");
+      error.show("Ведущий закрыл комнату");
     } else if (event.type === "error") {
-      setError(String(payload.message ?? "Ошибка игрового сервера"));
+      error.show(String(payload.message ?? "Ошибка игрового сервера"));
     }
-  }, [selected]);
+  }, [selected, error.show]);
 
   const { status, serverOffsetMs, send } = useRoomSocket(code, role, token, onEvent);
   const question = snapshot?.current_question;
@@ -237,7 +238,7 @@ function Connection({ code, role, token }: { code: string; role: "host" | "playe
   };
 
   if (!snapshot) {
-    return <main className={styles.center}><div className={styles.loader} /><h1>Подключаемся…</h1><p>{status === "reconnecting" ? "Сеть прервалась, пытаемся снова" : `Комната ${code}`}</p>{error ? <p className={styles.error}>{error}</p> : null}</main>;
+    return <main className={styles.center}><div className={styles.loader} /><h1>Подключаемся…</h1><p>{status === "reconnecting" ? "Сеть прервалась, пытаемся снова" : `Комната ${code}`}</p>{error.text ? <p className={styles.error}>{error.text}</p> : null}</main>;
   }
 
   const connectedCount = snapshot.players.filter((item) => item.is_connected).length;
@@ -266,7 +267,19 @@ function Connection({ code, role, token }: { code: string; role: "host" | "playe
             <div className={styles.connectionBadge} data-status={status} role="status">
               {status === "connected" ? "В сети" : "Переподключение…"}
             </div>
-            {error ? <div role="alert" className={styles.toast}>{error}</div> : null}
+            {error.text ? (
+              <div
+                role="alert"
+                className={
+                  error.leaving
+                    ? `${homeStyles.toast} ${homeStyles.toastError} ${homeStyles.toastLeaving}`
+                    : `${homeStyles.toast} ${homeStyles.toastError}`
+                }
+                onClick={() => error.dismiss()}
+              >
+                {error.text}
+              </div>
+            ) : null}
           </>
         }
       >
@@ -342,7 +355,7 @@ function Connection({ code, role, token }: { code: string; role: "host" | "playe
                 >
                   <span
                     className={readyFilled ? `${styles.readyFill} ${styles.readyFillActive}` : styles.readyFill}
-                    style={readying ? { transitionDuration: `${HOLD_CONFIRM_MS}ms` } : undefined}
+                    style={{ "--hold-confirm-ms": `${HOLD_CONFIRM_MS}ms` } as CSSProperties}
                     aria-hidden="true"
                   />
                   <span className={styles.readyLabel}>Приготовиться</span>
@@ -391,7 +404,19 @@ function Connection({ code, role, token }: { code: string; role: "host" | "playe
       {state === "QUESTION" && role === "host" ? <section className={styles.hostControls}><button className={styles.secondary} disabled={countdown !== 0} onClick={() => send("host_reveal_question")}>Раскрыть ответ</button><button className={styles.danger} onClick={() => send("host_finish_game")}>Завершить игру</button></section> : null}
       {state === "REVEAL" ? <section className={styles.reactions}>{role === "player" ? <><button onClick={() => { if (videoRef.current) { videoRef.current.currentTime = 0; void videoRef.current.play(); } }}>↻ <span>Повторить мем</span></button><button data-active={reaction === 1} onClick={() => send("reaction_set", { value: 1 })}>👍 <span>Лайк</span></button><button data-active={reaction === -1} onClick={() => send("reaction_set", { value: -1 })}>👎 <span>Дизлайк</span></button><button data-active={reaction === null} onClick={() => send("reaction_set", { value: null })}><span>Пропустить</span></button><p className={styles.autoNext}>{question?.position === snapshot.pack.question_count ? `Итоги через ${revealCountdown ?? "—"} с` : `Следующий мем через ${revealCountdown ?? "—"} с`}</p></> : <><button className={styles.primary} onClick={() => send("host_next_question")}>Следующий вопрос →</button><button className={styles.danger} onClick={() => send("host_finish_game")}>Завершить игру</button></>}</section> : null}
       {status !== "connected" ? <div className={styles.network}>Связь потеряна. Восстанавливаем…</div> : null}
-      {error ? <div role="alert" className={styles.toast} onClick={() => setError("")}>{error}</div> : null}
+      {error.text ? (
+        <div
+          role="alert"
+          className={
+            error.leaving
+              ? `${homeStyles.toast} ${homeStyles.toastError} ${homeStyles.toastLeaving}`
+              : `${homeStyles.toast} ${homeStyles.toastError}`
+          }
+          onClick={() => error.dismiss()}
+        >
+          {error.text}
+        </div>
+      ) : null}
     </main>
   );
 }
