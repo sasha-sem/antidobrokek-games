@@ -1,5 +1,6 @@
 {$DOMAIN::80} {
     encode zstd gzip
+    header X-Robots-Tag "noindex, nofollow, noarchive"
 
     request_body {
         max_size {$MAX_PACK_SIZE_MB:500}MB
