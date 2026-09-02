@@ -1,0 +1,205 @@
+/* ---------- Intro splash ---------- */
+/* Full-viewport, above everything (AnimatedBackdrop's own video/overlays/
+   pause button top out at z-index 5) — the smiley owns the screen for its
+   3s entrance before any result is shown. */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 45%, rgba(25, 25, 25, 0.94) 0%, rgba(0, 0, 0, 0.98) 70%);
+}
+.introCaption {
+  position: absolute;
+  bottom: 12vh;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: #b3b3b3;
+  animation: introCaption 3000ms ease forwards;
+}
+@keyframes introCaption {
+  0%, 12% { opacity: 0; }
+  25% { opacity: 1; }
+  72% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.introSmiley {
+  width: min(420px, 52vmin);
+  height: auto;
+  object-fit: contain;
+  opacity: 0;
+  will-change: transform, opacity, filter;
+  filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.55));
+  animation: introSmileyCombo 3000ms linear forwards;
+}
+/* One seamless keyframe, no restarts or seams — same proportions as
+   before (fly in ~45%, hold ~20%, fall ~35% of the total), just the
+   whole thing compressed ~9% (3.3s → 3s) so the swap into the results
+   scene lands a beat sooner. */
+@keyframes introSmileyCombo {
+  0%    { opacity: 0; transform: scale(4.2) rotate(-720deg); filter: blur(26px); animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+  20.5% { opacity: 1; filter: blur(4px); }
+  31.8% { opacity: 1; transform: scale(1.18) rotate(24deg); filter: blur(0); }
+  38.7% { transform: scale(0.94) rotate(-10deg); }
+  42.8% { transform: scale(1.04) rotate(4deg); }
+  45.5% { opacity: 1; transform: scale(1) rotate(0); filter: blur(0); }
+  66.7% { opacity: 1; transform: scale(1) rotate(0); animation-timing-function: cubic-bezier(0.45, 0, 0.9, 0.35); }
+  73.4% { opacity: 1; transform: translateY(-14%) rotate(-14deg); }
+  85%   { opacity: 1; transform: translateY(6%) rotate(18deg); }
+  100%  { opacity: 0; transform: translateY(115vh) rotate(52deg) scale(0.8); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .introSmiley {
+    animation: none;
+    opacity: 1;
+  }
+  .introCaption {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+.confettiCanvas {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* ---------- Final content ---------- */
+.finalContent {
+  width: min(880px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+.finalKicker {
+  margin: 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #b3b3b3;
+  animation: finalDrop 600ms var(--ease-out) 60ms both;
+}
+/* The one "rare event" in the whole game — a slightly more expressive
+   entrance is earned here, up to a light bounce (the same overshoot
+   curve as the score-bump on the reveal screen, for a consistent
+   "brand bounce" rather than inventing a new curve). Kept modest: a
+   small scale+blur settle, not the full-throw stamp the reference used —
+   loud enough to feel like a moment, not a jump-scare. */
+.finalTitle {
+  margin: 0;
+  font-size: clamp(2.4rem, 7vw, 4.5rem);
+  font-weight: 900;
+  line-height: 0.95;
+  text-transform: uppercase;
+  color: #e6fd46;
+  animation: finalStamp 550ms cubic-bezier(0.24, 1.4, 0.4, 1) 300ms both;
+}
+.finalWinner {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 2vw, 24px);
+  font-size: clamp(1.8rem, 5.4vw, 3.4rem);
+  font-weight: 900;
+  line-height: 0.95;
+  color: #f2f2f2;
+  text-shadow: 0 0 50px rgba(230, 253, 70, 0.35);
+  animation: finalStamp 500ms cubic-bezier(0.24, 1.4, 0.4, 1) 650ms both;
+}
+.finalAvatar {
+  width: clamp(40px, 6vw, 72px);
+  height: auto;
+  animation: finalFloat 3400ms ease-in-out infinite;
+}
+.finalScore {
+  margin: 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 15px;
+  font-weight: 700;
+  color: #e6fd46;
+  animation: finalDrop 500ms var(--ease-out) 1300ms both;
+}
+.finalMeta {
+  margin: 4px 0 0;
+  color: #656565;
+  font-size: 13px;
+  animation: finalFade 500ms var(--ease-out) 1450ms both;
+}
+.finalActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+  animation: finalFade 500ms var(--ease-out) 1500ms both;
+}
+.finalLink {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.finalDanger {
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255, 90, 120, 0.55);
+  background: transparent;
+  color: #ff9aac;
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, transform 140ms var(--ease-out);
+}
+.finalDanger:hover {
+  background: rgba(255, 90, 120, 0.1);
+  border-color: rgba(255, 90, 120, 0.8);
+}
+.finalDanger:active {
+  transform: scale(0.97);
+}
+
+@keyframes finalFade {
+  from { opacity: 0; }
+}
+@keyframes finalDrop {
+  0% { opacity: 0; transform: translateY(-24px); }
+  60% { opacity: 1; transform: translateY(3px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes finalStamp {
+  from { opacity: 0; transform: scale(1.4) rotate(-3deg); filter: blur(6px); }
+  60% { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes finalFloat {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-10px) rotate(3deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finalKicker, .finalTitle, .finalWinner, .finalScore, .finalMeta, .finalActions {
+    animation-duration: 0.01ms !important;
+  }
+  .finalAvatar {
+    animation: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .finalWinner {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

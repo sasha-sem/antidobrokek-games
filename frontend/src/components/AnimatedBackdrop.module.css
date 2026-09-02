@@ -1,0 +1,177 @@
+.page {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background: #000000;
+}
+
+/* No CSS treatment on pause/resume — useLoopingBackgroundVideo ramps the
+   video's actual playbackRate down to a near-stop (and back up) instead of
+   overlaying an opacity/filter fade, so the clip itself visibly winds down
+   and speeds back up rather than being dimmed by something on top of it. */
+.bgVideo {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.bgOverlayVignette {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(120% 95% at 50% 8%, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.5) 55%, rgba(0, 0, 0, 0.82) 100%);
+}
+
+.bgOverlayDim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+/* Pause button: bigger circle (48px) that expands into a pill on hover,
+   the icon living in its own fixed-size square that never moves so it
+   stays centered whether the pill is collapsed or expanded. Both icon
+   glyphs (pause bars / play triangle) are always in the DOM and crossfade
+   via [data-playing] + [data-variant] — same "stack both, toggle opacity"
+   pattern as .soundIconStack/.copyIconStack elsewhere, rather than
+   swapping which SVG is mounted. */
+.pauseButton {
+  --size: 41px;
+  --expanded-width: 100px;
+  position: fixed;
+  left: 22px;
+  bottom: 22px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  height: var(--size);
+  width: var(--size);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(242, 242, 242, 0.16);
+  border-radius: 999px;
+  background: rgba(20, 20, 20, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(242, 242, 242, 0.65);
+  cursor: pointer;
+  transition: width 350ms cubic-bezier(0.22, 1, 0.36, 1), background 250ms ease, border-color 250ms ease, color 250ms ease, transform 120ms ease;
+}
+/* Neutral gray, not brand lime, even on hover/focus — this is a utility
+   control for the decorative background, not something that should read
+   as a call to action. */
+.pauseButton:hover,
+.pauseButton:focus-visible {
+  width: var(--expanded-width);
+  background: rgba(25, 25, 25, 0.75);
+  border-color: rgba(242, 242, 242, 0.4);
+  color: #f2f2f2;
+}
+.pauseButton:active {
+  transform: scale(0.94);
+}
+.pauseButton:focus-visible {
+  outline: 2px solid rgba(242, 242, 242, 0.5);
+  outline-offset: 3px;
+}
+.pauseIcon {
+  position: absolute;
+  left: 0;
+  flex: 0 0 var(--size);
+  width: var(--size);
+  height: var(--size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pauseIconGlyph {
+  position: absolute;
+  transition: opacity 200ms ease, transform 300ms ease;
+}
+.pauseIconGlyph[data-variant="pause"] {
+  opacity: 1;
+  transform: translateX(0);
+}
+.pauseIconGlyph[data-variant="play"] {
+  opacity: 0;
+  transform: translateX(4px);
+}
+.pauseButton[data-playing="false"] .pauseIconGlyph[data-variant="pause"] {
+  opacity: 0;
+  transform: translateX(-4px);
+}
+.pauseButton[data-playing="false"] .pauseIconGlyph[data-variant="play"] {
+  opacity: 1;
+  transform: translateX(0);
+}
+.pauseLabel {
+  position: absolute;
+  left: var(--size);
+  padding-left: 6px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 200ms ease, transform 300ms ease;
+}
+.pauseButton:hover .pauseLabel,
+.pauseButton:focus-visible .pauseLabel {
+  opacity: 1;
+  transform: none;
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 96px 24px;
+}
+
+.inner {
+  width: 100%;
+  max-width: 1080px;
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+  animation: floatUp 700ms ease-out both;
+}
+
+@keyframes floatUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 56px 18px;
+  }
+  .inner {
+    gap: 40px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inner {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

@@ -35,6 +35,21 @@ export async function joinRoom(code: string, displayName: string, identityId: st
   return parseResponse<{ player_id: string; reconnect_token: string }>(response);
 }
 
+// Cheap pre-flight before createRoom's real (potentially large) upload —
+// throws the same ApiError createRoom would if a room is already active,
+// so the caller can skip ever starting an upload it already knows will
+// be rejected.
+export async function assertNoActiveRoom(hostSecret: string): Promise<void> {
+  const body = new FormData();
+  body.append("host_secret", hostSecret);
+  const response = await fetch("/api/host/rooms/current/status", {
+    method: "POST",
+    body,
+  });
+  if (response.ok) return;
+  await parseResponse(response);
+}
+
 export function createRoom(
   hostSecret: string,
   pack: File,

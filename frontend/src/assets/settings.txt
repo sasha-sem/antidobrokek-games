@@ -1,0 +1,4 @@
+bg colors: #000000; #191919; #262626.
+border color: #656565.
+text colors: #b3b3b3; #f2f2f2.
+primary colors: #919d46; #e6fd46.

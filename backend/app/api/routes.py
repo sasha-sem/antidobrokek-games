@@ -44,6 +44,21 @@ async def _save_upload(upload: UploadFile, target: Path, max_bytes: int) -> int:
         await upload.close()
 
 
+@router.post("/host/rooms/current/status", status_code=204)
+async def check_current_room(
+    request: Request,
+    host_secret: str = Form(...),
+) -> None:
+    """Same gate create_host_room checks before it touches the upload — lets
+    the client find out a room is already active without sending a
+    (possibly large) pack file first just to have it rejected."""
+    if not verify_secret(host_secret, request.app.state.settings.host_secret):
+        raise QuizError("Неверный секрет ведущего", code="invalid_host_secret", status_code=401)
+    async with request.app.state.database.session_factory() as session:
+        if await session.scalar(select(Room.id).where(Room.state.in_(OPEN_ROOM_STATES))):
+            raise QuizError("Сначала закройте текущую комнату", code="active_room_exists", status_code=409)
+
+
 @router.post("/host/rooms", response_model=HostRoomResponse)
 async def create_host_room(
     request: Request,

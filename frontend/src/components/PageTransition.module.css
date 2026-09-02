@@ -1,0 +1,36 @@
+/* Clips the transform-induced overflow described in PageTransition.tsx —
+   itself never transformed, so its box always matches .pane's real,
+   untransformed height. */
+.viewport {
+  overflow: hidden;
+}
+
+/* A confident settle in, a quicker drift out — per the animate skill's own
+   timing table (300-500ms for a view transition, exit faster than
+   entrance) and its natural-deceleration guidance, not a bounce. Only
+   transform + opacity, so this is cheap regardless of what the screen
+   underneath actually contains. */
+.pane {
+  animation: paneEnter 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.paneExiting {
+  animation: paneExit 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes paneEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+}
+@keyframes paneExit {
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.99);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pane, .paneExiting {
+    animation-duration: 0.01ms !important;
+  }
+}
