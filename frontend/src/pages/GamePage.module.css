@@ -1,17 +1,68 @@
-.center, .final { min-height: 100vh; display: grid; place-content: center; justify-items: center; text-align: center; gap: 14px; padding: 24px; }
-.center h1, .final h1 { margin: 0; font-size: clamp(2rem, 6vw, 5rem); }
-.center p, .final p { color: #9896a9; }
-.loader { width: 38px; height: 38px; border: 3px solid #30303f; border-top-color: #d8ff49; border-radius: 50%; animation: spin .8s linear infinite; }
+.center {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: 24px;
+  background: #000000;
+}
+.center h1 {
+  margin: 0;
+  font-family: Manrope, sans-serif;
+  font-weight: 800;
+  font-size: clamp(2rem, 6vw, 4rem);
+  color: #f2f2f2;
+}
+.center p {
+  margin: 0;
+  color: #b3b3b3;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 14px;
+}
+.loader {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(242, 242, 242, 0.12);
+  border-top-color: #e6fd46;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
 @keyframes spin { to { transform: rotate(360deg); } }
-.error { color: #ff6d83 !important; }
-.linkButton, .primary, .secondary, .danger { min-height: 48px; border: 0; border-radius: 13px; padding: 0 22px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font: 800 1rem inherit; cursor: pointer; }
-.primary, .linkButton { background: #d8ff49; color: #11130a; }
-.secondary { background: #292938; color: #fff; }
-.danger { background: #321923; color: #ff8b9e; border: 1px solid #5b2635; }
-.primary:disabled, .secondary:disabled { opacity: .35; cursor: not-allowed; }
-.gameHeader { height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-.logo { color: white; text-decoration: none; font-weight: 900; font-size: 1.35rem; letter-spacing: -.04em; }
-.logo span { color: #d8ff49; }
+.error { color: #ff9aac !important; }
+/* Same fill-sweep-on-hover mechanic as .primary (HomePage.module.css) —
+   this screen used to be on the old palette, disconnected from that
+   established button language. */
+.linkButton {
+  min-height: 48px;
+  border-radius: 13px;
+  padding: 0 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid rgba(230, 253, 70, 0.6);
+  background-color: transparent;
+  background-image: linear-gradient(#e6fd46, #e6fd46);
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 0% 100%;
+  color: #e6fd46;
+  transition: background-size 280ms var(--ease-drawer), color 200ms ease, border-color 200ms ease, transform 140ms var(--ease-out);
+}
+.linkButton:hover {
+  background-size: 100% 100%;
+  color: #191919;
+  border-color: #e6fd46;
+}
+.linkButton:active {
+  transform: scale(0.97);
+}
 
 /* Lobby: real-time connection health, not static copy — status flips to
    "Переподключение…" if the websocket drops, which matters a lot in a
@@ -55,6 +106,15 @@
 @keyframes connectionPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.55; }
+}
+
+/* Composes with homeStyles.toast directly rather than either of its own
+   type modifiers (.toastSuccess/.toastError) — this is neither a success
+   nor an error, just a neutral tip, so it gets its own neutral gray
+   border instead. .toast itself declares no border, so this adds cleanly
+   without fighting either modifier's cascade. */
+.fullscreenToast {
+  border: 1px solid rgba(242, 242, 242, 0.3);
 }
 
 .lobbyHero {
@@ -381,57 +441,622 @@
   color: #f2f2f2;
 }
 
-.game { min-height: 100vh; width: min(1500px, calc(100% - 40px)); margin: 0 auto; padding: 12px 0 24px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 12px; }
-.gameHeader { border-bottom: 1px solid #2b2b38; }
-.gameHeader > span:last-child { color: #77758b; font-size: .85rem; }
-.timer { min-width: 82px; padding: 7px 12px; background: #232330; border-radius: 10px; text-align: center; color: #d8ff49; font-weight: 900; }
-.timer[data-low="true"] { color: #ff6b81; animation: pulse .7s infinite alternate; }
+/* Same looping bg.mp4 world as Home/Invite/Lobby (via AnimatedBackdrop's
+   own CSS module, imported directly as `backdropStyles` rather than
+   duplicated here — see GamePage.tsx) — .game just hosts it full-bleed
+   instead of using the <AnimatedBackdrop> component itself, since that
+   component's centered/capped-width .content wrapper isn't a fit for a
+   stage that needs to fill the available viewport height edge to edge.
+   .gameContent carries the actual width cap + grid layout that used to
+   live on .game, and its z-index puts it above the fixed video/overlay
+   layers exactly like AnimatedBackdrop's own .content does. */
+.game {
+  position: relative;
+  min-height: 100vh;
+  background: #000000;
+}
+.gameContent {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  width: min(1500px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 12px 0 24px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 12px;
+}
+/* Grid, not flex + space-between: with 3 items space-between doesn't
+   center the middle one (its position depends on how wide its neighbors
+   are), and the timer is the one thing here worth pinning to the header's
+   true center regardless of how long "Вопрос 3/5" or the room code get.
+   The clip's elapsed-time indicator lives here now too (used to be a
+   separate bar along the stage's bottom edge, which read as disconnected
+   from the rest of the chrome) — same sweep mechanic as .answerButton's
+   hover fill (background-image swept in via background-size, driven by
+   videoProgress in GamePage.tsx), just neutral light gray instead of
+   brand lime — a color-inverting fill (mix-blend-mode) read as a glitch
+   rather than a progress indicator, so this stays a plain translucent
+   tint that never needs the text on top of it to change color at all. */
+.gameHeader {
+  height: 48px;
+  padding: 0 18px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(242, 242, 242, 0.08);
+  background-color: rgba(25, 25, 25, 0.5);
+  background-image: linear-gradient(rgba(242, 242, 242, 0.2), rgba(242, 242, 242, 0.2));
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 0% 100%;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background-size 200ms linear;
+}
+.gameHeader strong {
+  color: #f2f2f2;
+  font-family: Manrope, sans-serif;
+}
+.gameHeader > span:last-child {
+  justify-self: end;
+  color: #656565;
+  font-size: 13px;
+  font-family: "JetBrains Mono", monospace;
+}
+.timer {
+  min-width: 82px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(242, 242, 242, 0.08);
+  background: rgba(25, 25, 25, 0.6);
+  text-align: center;
+  color: #e6fd46;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+}
+.timer[data-low="true"] { color: #ff9aac; animation: pulse .7s infinite alternate; }
 @keyframes pulse { to { transform: scale(1.06); } }
 .gameGrid { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
-.stage { position: relative; min-height: 0; border: 1px solid #2f2f3e; border-radius: 20px; background: #000; overflow: hidden; display: grid; place-items: center; }
+.stage {
+  position: relative;
+  min-height: 0;
+  border: 1px solid rgba(242, 242, 242, 0.1);
+  border-radius: 20px;
+  background: #000;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
 .stage video { display: block; width: 100%; height: 100%; max-height: calc(100vh - 220px); object-fit: contain; background: #000; }
-.soundControls { position: absolute; z-index: 4; left: 14px; bottom: 14px; display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 12px; background: rgba(12,12,18,.82); }
-.soundControls button { width: 38px; height: 38px; border: 0; background: transparent; cursor: pointer; }
-.soundControls input { width: 90px; accent-color: #d8ff49; }
-.soundControls span { max-width: 150px; color: #ffe19a; font-size: .72rem; line-height: 1.2; }
-.overlay, .revealBanner, .videoError { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; text-align: center; padding: 24px; background: rgba(7, 7, 12, .82); backdrop-filter: blur(10px); }
-.overlay h2 { margin: 18px 0 3px; }
-.overlay p { color: #9290a3; }
-.revealBanner { inset: auto 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; background: linear-gradient(transparent, rgba(0,0,0,.9) 25%); backdrop-filter: none; padding-top: 80px; }
-.revealBanner span { flex-basis: 100%; color: #aaa8bb; text-transform: uppercase; letter-spacing: .15em; font-size: .75rem; }
-.revealBanner strong { font-size: clamp(2rem, 5vw, 4.5rem); color: #d8ff49; }
-.revealBanner em { flex-basis: 100%; font-style: normal; font-weight: 800; color: #ff7087; }
-.revealBanner em[data-correct="true"] { color: #d8ff49; }
+
+/* Fades during idle playback like a real player's chrome (useIdleVisibility
+   in GamePage.tsx, woken by pointer activity on .stage) — the video can't
+   actually be paused/scrubbed here (server-synced across every client), so
+   there's nothing lost by not parking a control bar on screen the whole
+   time. Sound still matters in both QUESTION and REVEAL, so the hook stays
+   active through both. */
+.soundControls {
+  position: absolute;
+  z-index: 4;
+  left: 14px;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(242, 242, 242, 0.14);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out);
+}
+.soundControls[data-visible="false"] {
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+}
+.soundToggle {
+  position: relative;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(242, 242, 242, 0.75);
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+.soundToggle:hover {
+  color: #f2f2f2;
+}
+.soundIconStack {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.soundIconStack svg {
+  position: absolute;
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+.soundIconOn {
+  opacity: 1;
+  transform: scale(1);
+}
+.soundIconMuted {
+  opacity: 0;
+  transform: scale(0.6);
+}
+.soundToggle[data-muted="true"] .soundIconOn {
+  opacity: 0;
+  transform: scale(0.6);
+}
+.soundToggle[data-muted="true"] .soundIconMuted {
+  opacity: 1;
+  transform: scale(1);
+}
+/* Same transparent-real-input-over-styled-track trick as HomePage's grace
+   slider (.rangeWrap/.rangeTrack/.rangeFill/.rangeThumb/.rangeInput),
+   scaled down for this pill — no hover-scale on the thumb here, unlike
+   that one: this control sits inside chrome that's already fading in/out
+   on idle, so a highlight-on-hover would compete with that rather than
+   help. */
+.volumeWrap {
+  position: relative;
+  width: 72px;
+  height: 14px;
+}
+.volumeTrack {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(242, 242, 242, 0.22);
+  overflow: hidden;
+  pointer-events: none;
+}
+.volumeFill {
+  height: 100%;
+  background: #e6fd46;
+}
+.volumeThumb {
+  position: absolute;
+  top: 50%;
+  left: 0%;
+  width: 16px;
+  height: 16px;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #e6fd46;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+.volumeInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.volumeInput::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: transparent;
+}
+.volumeInput::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+}
+.volumeInput:focus-visible ~ .volumeThumb {
+  box-shadow: 0 0 0 3px rgba(230, 253, 70, 0.4), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.soundHint {
+  max-width: 150px;
+  color: #e6fd46;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Fade+scale entrance via @starting-style (same technique already used
+   for .playerCard/.hostCard) instead of the instant JSX-conditional pop
+   these used to have. .revealBanner is the one deliberately slower/more
+   pronounced entrance on this screen — the emotional peak of a round
+   (correct/incorrect) earns the one authored moment; everything else here
+   stays quick, quiet feedback. */
+.overlay, .revealBanner, .videoError {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out);
+}
+@starting-style {
+  .overlay, .revealBanner, .videoError {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+.overlay h2 { margin: 18px 0 3px; color: #f2f2f2; }
+.overlay p { color: #b3b3b3; }
+.revealBanner {
+  inset: auto 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px 18px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.92) 25%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding-top: 80px;
+  transition: opacity 380ms var(--ease-out), transform 380ms var(--ease-out);
+}
+@starting-style {
+  .revealBanner {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+}
+.revealBanner > span { flex-basis: 100%; margin-top: 12px; color: #b3b3b3; text-transform: uppercase; letter-spacing: .15em; font-size: .75rem; font-family: "JetBrains Mono", monospace; }
+/* Name (+ "+1" riding right beside it, same baseline, same size) on top,
+   the verdict ("Верно!"/"Неверно"/"Нет ответа") centered below — the score
+   bump reads as part of the name line itself rather than a badge off to
+   the side disconnected from either line. */
+.revealNameCol {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.revealNameRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 14px;
+}
+.revealBanner strong { font-size: clamp(2rem, 5vw, 4.5rem); color: #e6fd46; }
+.revealBanner em { font-style: normal; font-weight: 800; color: #ff9aac; }
+/* Wrong: hangs from a point above itself and swings like a pendulum,
+   settling into place rather than sliding — a different feeling than the
+   correct case's rise, not just a different color, so the two outcomes
+   read apart even at a glance. The name above dims and desaturates right
+   as the swing settles, underlining that this round didn't go your way
+   without needing any extra copy. */
+.revealBanner em[data-correct="false"] {
+  transform-origin: 50% -60%;
+  animation: verdictPendulum 850ms cubic-bezier(0.3, 0.8, 0.3, 1) both;
+  animation-delay: 100ms;
+}
+@keyframes verdictPendulum {
+  0% { opacity: 0; transform: rotate(-14deg); }
+  35% { opacity: 1; transform: rotate(9deg); }
+  60% { transform: rotate(-5deg); }
+  82% { transform: rotate(2deg); }
+  100% { opacity: 1; transform: rotate(0deg); }
+}
+.revealNameCol[data-correct="false"] strong {
+  animation: nameDim 700ms ease-out both;
+  animation-delay: 650ms;
+}
+@keyframes nameDim {
+  from { opacity: 1; filter: saturate(1); }
+  to { opacity: 0.45; filter: saturate(0.25); }
+}
+/* Correct: choreographed as one sequence, each stage handed off to the
+   next rather than everything firing at once — the +1's two characters
+   roll in like slot-machine digits, the whole badge bounces once as they
+   land, a couple of sparks flick outward, then "Верно!" rises in and the
+   underline grows under it. */
+.revealBanner em[data-correct="true"] {
+  color: #e6fd46;
+  animation: verdictRise 450ms ease-out both;
+  animation-delay: 600ms;
+}
+@keyframes verdictRise {
+  from { opacity: 0; transform: translateY(8px); }
+}
+.verdictBar {
+  display: block;
+  width: 64px;
+  height: 2px;
+  margin: 6px auto 0;
+  background: #e6fd46;
+  transform-origin: left center;
+  animation: verdictBarGrow 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: 660ms;
+}
+@keyframes verdictBarGrow {
+  from { transform: scaleX(0); }
+}
+.scoreGain {
+  position: relative;
+  color: #e6fd46;
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 800;
+  /* Literally the same font-size as the name (.revealBanner strong) —
+     not a separately-derived smaller value. */
+  font-size: clamp(2rem, 5vw, 4.5rem);
+}
+/* Digits roll in, the badge bounces once as they land, then holds still —
+   no perpetual float. The earlier looping version read as fidgety on a
+   line meant to settle and be read. */
+.scoreGainInner {
+  display: flex;
+  align-items: baseline;
+  gap: 0.02em;
+  animation: scoreBounce 460ms cubic-bezier(0.24, 1.4, 0.4, 1) both 500ms;
+}
+@keyframes scoreBounce {
+  0% { transform: scale(1) rotate(0); }
+  35% { transform: scale(1.2) rotate(3deg); }
+  60% { transform: scale(0.95) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+/* Each character sits in its own clipped window and slides up into view
+   — the slot-machine "digit landing" effect — with the second character
+   landing slightly later than the first so they don't arrive as one flat
+   block. */
+.scoreSlot {
+  overflow: hidden;
+  height: 1em;
+  display: flex;
+  align-items: baseline;
+}
+.scoreDigit {
+  display: block;
+  animation: scoreRoll 340ms cubic-bezier(0.3, 0.9, 0.2, 1) both;
+}
+.scoreSlotSecond .scoreDigit {
+  animation-duration: 420ms;
+  animation-delay: 120ms;
+}
+@keyframes scoreRoll {
+  from { transform: translateY(100%); }
+}
+.spark {
+  position: absolute;
+  top: 45%;
+  border-radius: 50%;
+  background: #e6fd46;
+  animation: sparkFly 1000ms ease-out both;
+}
+.sparkA {
+  left: -6px;
+  width: 8px;
+  height: 8px;
+  --spark-dx: -52px;
+  --spark-dy: -42px;
+  animation-delay: 560ms;
+}
+.sparkB {
+  right: -6px;
+  width: 6px;
+  height: 6px;
+  background: #b9c98a;
+  --spark-dx: 56px;
+  --spark-dy: -30px;
+  animation-delay: 620ms;
+  animation-duration: 1100ms;
+}
+@keyframes sparkFly {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.2); }
+  22% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--spark-dx), var(--spark-dy)) scale(0.8); }
+}
 .videoError { color: #ffdce2; background: rgba(55, 13, 26, .93); }
-.answers { position: relative; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
-.answers button { min-height: 62px; border: 1px solid #363647; background: #191925; border-radius: 14px; color: white; font: 800 1rem inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
-.answers button:hover, .answers .selected { border-color: #d8ff49; background: #293015; box-shadow: 0 0 0 2px rgba(216,255,73,.14); }
-.answers button:disabled { opacity: .5; }
-.answers kbd { color: #77758a; font: .75rem monospace; }
-.accepted { position: absolute; right: 8px; top: -30px; color: #d8ff49; font-size: .83rem; }
-.hostControls, .reactions { min-height: 62px; display: flex; justify-content: center; gap: 10px; }
-.reactions button { min-height: 54px; min-width: 120px; padding: 0 20px; border: 1px solid #353544; border-radius: 14px; background: #1b1b27; color: white; cursor: pointer; font: 800 1rem inherit; }
-.reactions button[data-active="true"] { border-color: #d8ff49; background: #293015; }
-.autoNext { min-height: 54px; margin: 0; padding: 0 14px; display: flex; align-items: center; color: #aaa8bb; font-weight: 700; }
-.network { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); background: #654513; color: #ffe0a3; padding: 10px 18px; border-radius: 10px; z-index: 20; }
-.final { width: min(760px, 100% - 32px); margin: 0 auto; }
-.final > aside { width: 100%; box-sizing: border-box; }
-.kicker { color: #d8ff49 !important; text-transform: uppercase; letter-spacing: .16em; }
-.winner { color: #d8ff49; font-size: clamp(2.5rem, 8vw, 6rem); font-weight: 900; letter-spacing: -.05em; margin-bottom: 20px; }
+
+/* Same glass-card material as .playerCard in the lobby (translucent dark
+   fill + blur + hairline border), not a pill button — this is a card you
+   pick, matching the lobby's own player cards since it's the same kind of
+   choice (which person). Fill-on-hover reuses .primary's exact mechanic
+   from HomePage (a solid-color background-image swept in via
+   background-size, not a color/background-color transition) so hovering
+   an option previews the same "committing to it" feeling as hovering the
+   primary CTA elsewhere. Selecting just freezes that same filled end
+   state — no extra glow/shadow layered on top — so hover-preview and
+   locked-in read as the same visual, not two different treatments. */
+.answers { position: relative; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.answerButton {
+  position: relative;
+  min-height: 66px;
+  padding: 0 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(242, 242, 242, 0.08);
+  background-color: rgba(25, 25, 25, 0.5);
+  background-image: linear-gradient(#e6fd46, #e6fd46);
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 0% 100%;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #f2f2f2;
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background-size 280ms var(--ease-drawer), color 200ms ease, border-color 200ms ease, transform 140ms var(--ease-out);
+}
+.answerButton:hover:not(:disabled) {
+  background-size: 100% 100%;
+  color: #191919;
+  border-color: rgba(230, 253, 70, 0.5);
+}
+.answerButton:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.answerButton:disabled { opacity: .5; cursor: not-allowed; }
+.answerButton[data-selected="true"] {
+  background-size: 100% 100%;
+  color: #191919;
+  border-color: rgba(230, 253, 70, 0.5);
+}
+.answerNumber {
+  flex: none;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e6fd46;
+  transition: color 200ms ease;
+}
+.answerButton:hover:not(:disabled) .answerNumber,
+.answerButton[data-selected="true"] .answerNumber {
+  color: rgba(25, 25, 25, 0.65);
+}
+.answerName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Reserved, always-rendered slot below .answers (not a grid row inside it)
+   so the caption appearing/disappearing can never resize the answer grid
+   or shift the buttons — the jump that used to happen came from exactly
+   that coupling. */
+.acceptedSlot {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  /* Clips .accepted's own slide so it genuinely emerges from below this
+     slot's lower edge instead of just fading in place — the "drawer"
+     read the plain opacity+4px version was missing. Costs nothing here:
+     the slot's height is already fixed, so nothing outside it was ever
+     visible past this edge anyway. */
+  overflow: hidden;
+}
+/* Plain text, not a badge — a pill (padding + border) came out taller than
+   the 24px this slot reserves, so it silently overflowed .acceptedSlot and
+   pushed .actionsSlot past its own fixed height on every answer, which is
+   exactly the jump this slot exists to prevent. Kept simple on purpose: no
+   icon (a checkmark glyph, even as an SVG rather than unicode, still read
+   as "the ✓ I asked to remove"), muted gray matching "Время на ответ"
+   rather than brand lime, since this confirms receipt, not success.
+   One property pair (transform + opacity), one deceleration curve, no
+   overshoot — a quiet status line earns a controlled reveal, not a bouncy
+   one; that liveliness is reserved for the actual score celebration. */
+.accepted {
+  display: inline-block;
+  color: #656565;
+  font-size: 13px;
+  font-weight: 500;
+  animation: acceptedIn 300ms var(--ease-out) both;
+}
+@keyframes acceptedIn {
+  from { opacity: 0; transform: translateY(100%); }
+}
+/* Shared fixed-height slot for whichever action row is current (see the
+   comment on .actionsSlot in GamePage.tsx) — sized to the taller of the
+   two possible contents (answerButton 66px + acceptedSlot 24px + its 8px
+   margin = 98px) and vertically centers whatever's actually rendered, so
+   this row's own box never changes size across QUESTION/REVEAL/host
+   states and the flexible stage above never has to resize to compensate. */
+.actionsSlot {
+  min-height: 98px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.hostControls, .reactions { min-height: 62px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.reactionButton {
+  min-height: 54px;
+  min-width: 120px;
+  padding: 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1.5px solid rgba(242, 242, 242, 0.14);
+  border-radius: 14px;
+  background: transparent;
+  color: #f2f2f2;
+  cursor: pointer;
+  font-family: Manrope, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  transition: border-color 160ms ease, background 200ms ease, color 200ms ease, transform 140ms var(--ease-out);
+}
+.reactionButton:hover {
+  border-color: rgba(242, 242, 242, 0.32);
+}
+.reactionButton:active {
+  transform: scale(0.97);
+}
+/* Same brand fill as a selected answer for both — not red for dislike.
+   Red is this app's destructive/error color everywhere else; reusing it
+   here would read as "something's wrong" rather than "you disliked this". */
+.reactionButton[data-active="true"] {
+  border-color: #e6fd46;
+  background: #e6fd46;
+  color: #191919;
+}
+.autoNext {
+  min-height: 54px;
+  margin: 0;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  color: #b3b3b3;
+  font-weight: 700;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+}
+.network {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 1px solid rgba(255, 186, 74, 0.4);
+  background: rgba(53, 33, 10, 0.92);
+  color: #ffba4b;
+  padding: 10px 18px;
+  border-radius: 10px;
+  z-index: 20;
+}
 @media (max-width: 768px) {
   .lobbyCode { font-size: clamp(2.4rem, 14vw, 3.6rem); }
   .playerGrid { grid-template-columns: 1fr 1fr; }
   .playerCard { min-height: 110px; }
   .connectionBadge { top: 14px; right: 14px; }
-  .game { width: calc(100% - 18px); grid-template-rows: auto auto auto; }
+  .gameContent { width: calc(100% - 18px); grid-template-rows: auto auto auto; }
   .gameHeader { display: grid; height: auto; padding: 10px 0; grid-template-columns: 1fr auto; }
   .gameHeader > span:last-child { display: none; }
   .gameGrid { display: flex; flex-direction: column; }
   .stage { aspect-ratio: 16 / 10; }
   .stage video { max-height: 55vh; }
-  .gameGrid > aside { order: 2; min-width: 0; }
   .answers { grid-template-columns: 1fr 1fr; }
-  .answers button, .reactions button { min-height: 50px; min-width: 0; }
+  .answerButton, .reactionButton { min-height: 50px; min-width: 0; }
   .reactions { flex-wrap: wrap; }
   .revealBanner strong { font-size: 2.3rem; }
 }
@@ -445,5 +1070,21 @@
   }
   .readyFillActive {
     transition-duration: 1ms !important;
+  }
+  .overlay, .revealBanner, .videoError, .soundControls, .gameHeader {
+    transition-duration: 0.01ms !important;
+  }
+  .accepted {
+    animation-duration: 0.01ms !important;
+  }
+  .revealBanner em[data-correct="true"],
+  .revealBanner em[data-correct="false"],
+  .revealNameCol[data-correct="false"] strong,
+  .scoreGain,
+  .scoreGainInner,
+  .scoreDigit,
+  .spark,
+  .verdictBar {
+    animation-duration: 0.01ms !important;
   }
 }

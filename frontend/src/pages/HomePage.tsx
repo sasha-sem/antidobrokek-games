@@ -13,6 +13,27 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Неизвестная ошибка";
 }
 
+const GRACE_STORAGE_KEY = "dobrokek.hostGrace";
+
+function readPersistedGrace(): number {
+  try {
+    const raw = localStorage.getItem(GRACE_STORAGE_KEY);
+    if (raw === null) return 5;
+    const value = Number(raw);
+    return Number.isFinite(value) ? Math.min(15, Math.max(0, value)) : 5;
+  } catch {
+    return 5;
+  }
+}
+
+function writePersistedGrace(value: number) {
+  try {
+    localStorage.setItem(GRACE_STORAGE_KEY, String(value));
+  } catch {
+    // Best-effort only — the preference just won't survive a reload.
+  }
+}
+
 export function HomePage() {
   const navigate = useNavigate();
   const [code, setCode] = useState("");
@@ -20,7 +41,7 @@ export function HomePage() {
   const [showHost, setShowHost] = useState(false);
   const [hostSecret, setHostSecret] = useState("");
   const [pack, setPack] = useState<File | null>(null);
-  const [grace, setGrace] = useState(5);
+  const [grace, setGrace] = useState(() => readPersistedGrace());
   const [progress, setProgress] = useState<number | null>(null);
   const [progressLeaving, setProgressLeaving] = useState(false);
   const progressHideTimer = useRef<number | null>(null);
@@ -341,7 +362,11 @@ export function HomePage() {
                     min="0"
                     max="15"
                     value={grace}
-                    onChange={(e) => setGrace(Number(e.target.value))}
+                    onChange={(e) => {
+                      const next = Number(e.target.value);
+                      setGrace(next);
+                      writePersistedGrace(next);
+                    }}
                   />
                   <div className={styles.rangeTrack}>
                     <div className={styles.rangeFill} style={{ width: rangePosition }} />

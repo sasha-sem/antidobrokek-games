@@ -6,6 +6,10 @@
   background: #000000;
 }
 
+/* No CSS treatment on pause/resume — useLoopingBackgroundVideo ramps the
+   video's actual playbackRate down to a near-stop (and back up) instead of
+   overlaying an opacity/filter fade, so the clip itself visibly winds down
+   and speeds back up rather than being dimmed by something on top of it. */
 .bgVideo {
   position: fixed;
   inset: 0;
@@ -29,58 +33,95 @@
   background: rgba(0, 0, 0, 0.28);
 }
 
-/* Pause button: the icon lives in its own fixed 36px square that never moves,
-   so it stays centered in the circle whether the pill is collapsed or expanded
-   on hover. 36px, not 38px: .pauseButton is border-box with a 1px border, so
-   its actual content box is 38 − 1px − 1px = 36px — matching the icon slot to
-   that exact box removes a ~1px rightward centering bias. */
+/* Pause button: bigger circle (48px) that expands into a pill on hover,
+   the icon living in its own fixed-size square that never moves so it
+   stays centered whether the pill is collapsed or expanded. Both icon
+   glyphs (pause bars / play triangle) are always in the DOM and crossfade
+   via [data-playing] + [data-variant] — same "stack both, toggle opacity"
+   pattern as .soundIconStack/.copyIconStack elsewhere, rather than
+   swapping which SVG is mounted. */
 .pauseButton {
+  --size: 41px;
+  --expanded-width: 100px;
   position: fixed;
   left: 22px;
   bottom: 22px;
   z-index: 5;
   display: flex;
   align-items: center;
-  height: 38px;
-  width: 38px;
+  height: var(--size);
+  width: var(--size);
   padding: 0;
   overflow: hidden;
-  border: 1px solid rgba(242, 242, 242, 0.14);
+  border: 1px solid rgba(242, 242, 242, 0.16);
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.32);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: rgba(242, 242, 242, 0.62);
-  opacity: 0.55;
+  background: rgba(20, 20, 20, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(242, 242, 242, 0.65);
   cursor: pointer;
-  transition: opacity 200ms ease, width 240ms var(--ease-drawer), border-color 200ms ease, color 200ms ease;
+  transition: width 350ms cubic-bezier(0.22, 1, 0.36, 1), background 250ms ease, border-color 250ms ease, color 250ms ease, transform 120ms ease;
 }
+/* Neutral gray, not brand lime, even on hover/focus — this is a utility
+   control for the decorative background, not something that should read
+   as a call to action. */
 .pauseButton:hover,
 .pauseButton:focus-visible {
-  opacity: 1;
-  width: 92px;
-  border-color: rgba(230, 253, 70, 0.45);
-  color: #e6fd46;
+  width: var(--expanded-width);
+  background: rgba(25, 25, 25, 0.75);
+  border-color: rgba(242, 242, 242, 0.4);
+  color: #f2f2f2;
+}
+.pauseButton:active {
+  transform: scale(0.94);
+}
+.pauseButton:focus-visible {
+  outline: 2px solid rgba(242, 242, 242, 0.5);
+  outline-offset: 3px;
 }
 .pauseIcon {
-  flex: 0 0 36px;
-  width: 36px;
-  height: 36px;
+  position: absolute;
+  left: 0;
+  flex: 0 0 var(--size);
+  width: var(--size);
+  height: var(--size);
   display: flex;
   align-items: center;
   justify-content: center;
 }
+.pauseIconGlyph {
+  position: absolute;
+  transition: opacity 200ms ease, transform 300ms ease;
+}
+.pauseIconGlyph[data-variant="pause"] {
+  opacity: 1;
+  transform: translateX(0);
+}
+.pauseIconGlyph[data-variant="play"] {
+  opacity: 0;
+  transform: translateX(4px);
+}
+.pauseButton[data-playing="false"] .pauseIconGlyph[data-variant="pause"] {
+  opacity: 0;
+  transform: translateX(-4px);
+}
+.pauseButton[data-playing="false"] .pauseIconGlyph[data-variant="play"] {
+  opacity: 1;
+  transform: translateX(0);
+}
 .pauseLabel {
-  flex: none;
-  padding-right: 20px;
+  position: absolute;
+  left: var(--size);
+  padding-left: 6px;
   font-family: "JetBrains Mono", monospace;
   font-size: 11px;
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
   opacity: 0;
-  transform: translateX(-4px);
-  transition: opacity 180ms ease, transform 220ms var(--ease-drawer);
+  transform: translateX(-8px);
+  transition: opacity 200ms ease, transform 300ms ease;
 }
 .pauseButton:hover .pauseLabel,
 .pauseButton:focus-visible .pauseLabel {

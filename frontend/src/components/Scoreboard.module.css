@@ -1,9 +1,110 @@
-.panel { background: rgba(20, 20, 31, .88); border: 1px solid #303044; border-radius: 20px; padding: 20px; min-width: 250px; }
-.panel summary { margin: 0 0 16px; font-size: 1rem; color: #aaa8bc; text-transform: uppercase; letter-spacing: .12em; font-weight: 800; cursor: pointer; }
-.list { list-style: none; padding: 0; margin: 0; display: grid; gap: 9px; }
-.list li { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 8px; min-height: 44px; padding: 0 10px; border-radius: 12px; background: #191925; }
-.leader { box-shadow: inset 3px 0 #d8ff49; }
-.rank { color: #77758b; }
-.name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.name small { display: block; color: #77758b; font-size: .65rem; margin-top: 2px; }
-.empty { color: #77758b; }
+.panel {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(25, 25, 25, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(242, 242, 242, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  /* No static opacity here — with `from { opacity: 0 }` as the only
+     keyframe, the animation's implicit end value is whatever opacity
+     this rule resolves to WITHOUT the animation, per spec. A static
+     `opacity: 0` alongside it would make that implicit end 0 too — an
+     animation from 0 to 0 that never actually becomes visible. */
+  animation: panelIn 400ms var(--ease-out) both;
+}
+@keyframes panelIn {
+  from { opacity: 0; }
+}
+.heading {
+  margin: 0 0 14px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #b3b3b3;
+}
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+/* All rows arrive together (same animation-delay, set inline from
+   Scoreboard.tsx) rather than staggered one-by-one — the count-up on each
+   row's own score is what reads as sequenced motion here instead. */
+.list li {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(242, 242, 242, 0.08);
+  background: rgba(242, 242, 242, 0.04);
+  animation: rowIn 420ms var(--ease-out) both;
+}
+@keyframes rowIn {
+  from { opacity: 0; transform: translateX(-16px); }
+}
+.leader {
+  border-color: rgba(230, 253, 70, 0.4);
+  background: linear-gradient(90deg, rgba(230, 253, 70, 0.1), rgba(230, 253, 70, 0.02));
+}
+.rank {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #656565;
+}
+.leader .rank {
+  color: #e6fd46;
+}
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #f2f2f2;
+  font-weight: 600;
+}
+/* Always in the DOM (never conditionally mounted) so its line height is
+   reserved from the very first render — only [data-visible] toggles, via
+   a transition, once its row's count-up settles. A row that only grows
+   taller once ITS OWN number finishes (while neighbors are still
+   counting) is exactly what made the whole table visibly jump before. */
+.name small {
+  display: block;
+  margin-top: 2px;
+  white-space: normal;
+  color: #656565;
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out);
+}
+.name small[data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+.list li strong {
+  font-family: "JetBrains Mono", monospace;
+  font-weight: 700;
+  color: #e6fd46;
+}
+.empty {
+  color: #656565;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel, .list li {
+    animation-duration: 0.01ms !important;
+  }
+  .name small {
+    transition-duration: 0.01ms !important;
+  }
+}

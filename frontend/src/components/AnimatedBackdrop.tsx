@@ -32,21 +32,18 @@ export function AnimatedBackdrop({ children, overlays }: AnimatedBackdropProps) 
       <button
         type="button"
         className={styles.pauseButton}
+        data-playing={playing}
         onClick={toggle}
-        title={playing ? "Остановить фон" : "Запустить фон"}
         aria-label={playing ? "Остановить фон" : "Запустить фон"}
       >
         <span className={styles.pauseIcon} aria-hidden="true">
-          {playing ? (
-            <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor">
-              <rect x="0" width="3" height="12" rx="1" />
-              <rect x="7" width="3" height="12" rx="1" />
-            </svg>
-          ) : (
-            <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor">
-              <polygon points="0,0 10,6 0,12" />
-            </svg>
-          )}
+          <svg className={styles.pauseIconGlyph} data-variant="pause" width="8.5" height="10.2" viewBox="0 0 10 12" fill="currentColor">
+            <rect x="0" width="3" height="12" rx="1" />
+            <rect x="7" width="3" height="12" rx="1" />
+          </svg>
+          <svg className={styles.pauseIconGlyph} data-variant="play" width="8.5" height="10.2" viewBox="0 0 10 12" fill="currentColor">
+            <polygon points="0,0 10,6 0,12" />
+          </svg>
         </span>
         <span className={styles.pauseLabel} aria-hidden="true">{playing ? "стоп" : "пуск"}</span>
       </button>
