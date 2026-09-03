@@ -13,7 +13,7 @@ from .authors import AuthorCatalog
 from .history import HistoryStore
 from .manifest import sha256_file, validate_manifest
 from .models import ScanResult, TelegramVideo
-from .selection import distribution, select_balanced
+from .selection import distribution, select_balanced, select_random
 from .telegram import TelegramSource
 from .video import transcode_video
 
@@ -51,6 +51,7 @@ async def build_pack(
     max_file_size_bytes: int,
     allow_reuse: bool,
     allow_imbalance: bool,
+    selection: str,
     skip_unknown_authors: bool,
     seed: int | str | None,
     ffmpeg_binary: str,
@@ -68,12 +69,17 @@ async def build_pack(
         max_duration_seconds=max_duration_seconds,
         allow_reuse=allow_reuse,
     )
-    selected = select_balanced(
-        candidates,
-        count,
-        seed=seed,
-        allow_imbalance=allow_imbalance,
-    )
+    if selection == "random":
+        selected = select_random(candidates, count, seed=seed)
+    elif selection == "balanced":
+        selected = select_balanced(
+            candidates,
+            count,
+            seed=seed,
+            allow_imbalance=allow_imbalance,
+        )
+    else:
+        raise PackBuildError(f"Неизвестный режим выбора: {selection}")
     pack_id = str(uuid.uuid4())
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)

@@ -2,7 +2,7 @@
 name = "dobrokek-pack-builder"
 version = "0.1.0"
 description = "Local Telegram pack builder for Dobrokek Quiz"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<4.0"
 dependencies = [
   "jsonschema[format]>=4.23,<5",
   "python-dotenv>=1.0,<2",
@@ -37,4 +37,4 @@ target-version = "py312"
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.poetry]
-package-mode = false
+package-mode = true

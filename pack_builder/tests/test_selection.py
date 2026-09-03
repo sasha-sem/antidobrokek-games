@@ -3,7 +3,12 @@ from datetime import UTC, datetime
 import pytest
 
 from dobrokek_pack_builder.models import TelegramVideo
-from dobrokek_pack_builder.selection import SelectionError, distribution, select_balanced
+from dobrokek_pack_builder.selection import (
+    SelectionError,
+    distribution,
+    select_balanced,
+    select_random,
+)
 
 
 def video(author: str, message_id: int) -> TelegramVideo:
@@ -23,3 +28,19 @@ def test_imbalance_requires_flag() -> None:
     with pytest.raises(SelectionError, match="allow-imbalance"):
         select_balanced(videos, 6, seed=1, allow_imbalance=False)
     assert len(select_balanced(videos, 6, seed=1, allow_imbalance=True)) == 6
+
+
+def test_random_selection_samples_videos_without_author_quotas() -> None:
+    videos = [video("a", index) for index in range(10)] + [video("b", 99)]
+
+    first = select_random(videos, 6, seed=1)
+    second = select_random(videos, 6, seed=1)
+
+    assert [item.message_id for item in first] == [2, 9, 1, 4, 0, 3]
+    assert [item.message_id for item in second] == [item.message_id for item in first]
+    assert distribution(first) == {"a": 6}
+
+
+def test_random_selection_requires_enough_videos() -> None:
+    with pytest.raises(SelectionError, match="доступно 1"):
+        select_random([video("a", 1)], 2, seed=None)

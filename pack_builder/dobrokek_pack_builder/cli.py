@@ -57,7 +57,17 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("--max-duration", type=positive_int, default=60)
     build.add_argument("--max-file-size", type=positive_int, default=50, help="Лимит видео в МБ")
     build.add_argument("--allow-reuse", action="store_true")
-    build.add_argument("--allow-imbalance", action="store_true")
+    build.add_argument(
+        "--selection",
+        choices=("random", "balanced"),
+        default="random",
+        help="Способ выбора роликов (по умолчанию: random)",
+    )
+    build.add_argument(
+        "--allow-imbalance",
+        action="store_true",
+        help="Разрешить неравные квоты в режиме --selection balanced",
+    )
     build.add_argument("--skip-unknown-authors", action="store_true")
     build.add_argument("--seed")
     return parser
@@ -126,6 +136,7 @@ async def run(args: argparse.Namespace) -> None:
                 max_file_size_bytes=args.max_file_size * 1024 * 1024,
                 allow_reuse=args.allow_reuse,
                 allow_imbalance=args.allow_imbalance,
+                selection=args.selection,
                 skip_unknown_authors=args.skip_unknown_authors,
                 seed=args.seed,
                 ffmpeg_binary=os.getenv("FFMPEG_BINARY", "ffmpeg"),

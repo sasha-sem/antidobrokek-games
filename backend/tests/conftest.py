@@ -26,7 +26,7 @@ def settings(tmp_path: Path) -> Settings:
         data_dir=data_dir,
         database_url=f"sqlite+aiosqlite:///{data_dir / 'db' / 'quiz.sqlite3'}",
         min_questions=1,
-        max_questions=30,
+        max_questions=50,
         question_start_delay_seconds=1,
         reveal_duration_seconds=1,
     )

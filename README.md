@@ -42,35 +42,44 @@ docker compose down
 
 ## Pack Builder: Linux и WSL
 
-Нужны Python 3.12 и FFmpeg/FFprobe в `PATH`. Для Ubuntu/WSL:
+Нужны Python 3.12, Poetry 2.x и FFmpeg/FFprobe в `PATH`. Для Ubuntu/WSL:
 
 ```bash
 sudo apt install ffmpeg python3.12-venv
-make pack-install
-cp pack_builder/.env.example pack_builder/.env
-cp pack_builder/authors.example.yaml pack_builder/authors.yaml
-cd pack_builder
+poetry --version
+make pack-setup
 ```
 
-Заполните `.env`, затем просканируйте канал:
+Команда создаёт локальное окружение `pack_builder/.venv` через Poetry и, если их
+ещё нет, копирует шаблоны `pack_builder/.env` и `pack_builder/authors.yaml`.
+Заполните оба файла, затем просканируйте канал:
 
 ```bash
-.venv/bin/dobrokek-pack scan \
-  --channel -1001234567890 \
-  --authors ./authors.yaml
+make pack-scan
 ```
 
 Создание первого пака:
 
 ```bash
-.venv/bin/dobrokek-pack build \
-  --channel -1001234567890 \
-  --authors ./authors.yaml \
-  --count 20 \
-  --title "Доброкек — пак №1" \
-  --seed 2026-08-14 \
-  --output ./result/dobrokek-pack-01.zip
+make pack-build \
+  PACK_TITLE="Доброкек — пак №1" \
+  PACK_COUNT=20 \
+  PACK_SEED=2026-08-14 \
+  PACK_OUTPUT=./result/dobrokek-pack-01.zip
 ```
+
+Канал по умолчанию читается из `TELEGRAM_CHANNEL_ID` в `pack_builder/.env`.
+Его можно переопределить через `PACK_CHANNEL`. Даты задаются переменными
+`PACK_FROM_DATE` и `PACK_TO_DATE`. По умолчанию Make-конфиг собирает 50 случайных
+видео до 30 секунд без квот по авторам и пропускает видео с неизвестным
+автором. Для старого сбалансированного режима:
+
+```bash
+make pack-build PACK_SELECTION=balanced PACK_BUILD_FLAGS="--allow-imbalance"
+```
+
+Краткую справку по Make-командам выводит `make pack-help`. CLI также доступна
+напрямую: `cd pack_builder && poetry run dobrokek-pack --help`.
 
 Первый запуск попросит номер телефона, Telegram-код и, при необходимости, пароль 2FA. Последующие запуски используют локальную `.session`.
 
@@ -97,7 +106,7 @@ Set-Location pack_builder
   --output .\result\dobrokek-pack-01.zip
 ```
 
-`.env`, `authors.yaml`, Telegram-сессия, `history.sqlite3` и готовые паки игнорируются Git. Нераспознанный автор по умолчанию останавливает сборку; пропустить такие сообщения можно явным флагом `--skip-unknown-authors`.
+`.env`, `authors.yaml`, Telegram-сессия, `history.sqlite3` и готовые паки игнорируются Git. При прямом запуске CLI нераспознанный автор останавливает сборку; пропустить такие сообщения можно флагом `--skip-unknown-authors`.
 
 ## Локальная разработка
 

@@ -15,6 +15,20 @@ def distribution(videos: Iterable[TelegramVideo]) -> dict[str, int]:
     return dict(sorted(Counter(video.author_id for video in videos if video.author_id).items()))
 
 
+def select_random(
+    videos: Iterable[TelegramVideo],
+    count: int,
+    *,
+    seed: int | str | None,
+) -> list[TelegramVideo]:
+    if count < 1:
+        raise SelectionError("Число вопросов должно быть положительным")
+    available = list(videos)
+    if len(available) < count:
+        raise SelectionError(f"Нужно {count} видео, но доступно {len(available)}")
+    return random.Random(seed).sample(available, count)
+
+
 def select_balanced(
     videos: Iterable[TelegramVideo],
     count: int,

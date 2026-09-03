@@ -49,3 +49,32 @@ def test_unknown_author_and_unsafe_path_are_rejected() -> None:
     assert not safe_media_path("videos/../secret.mp4")
     assert not safe_media_path(str(PureWindowsPath("videos", "file.mp4")))
     assert safe_media_path(f"videos/{uuid.uuid4()}.mp4")
+
+
+def test_manifest_accepts_up_to_50_questions() -> None:
+    manifest = make_manifest()
+    template = manifest["questions"][0]
+    manifest["questions"] = [
+        {
+            **template,
+            "id": str(uuid.uuid4()),
+            "position": position,
+            "telegram_message_id": position,
+            "media_path": f"videos/{uuid.uuid4()}.mp4",
+        }
+        for position in range(1, 51)
+    ]
+
+    validate_manifest(manifest)
+
+    manifest["questions"].append(
+        {
+            **template,
+            "id": str(uuid.uuid4()),
+            "position": 51,
+            "telegram_message_id": 51,
+            "media_path": f"videos/{uuid.uuid4()}.mp4",
+        }
+    )
+    with pytest.raises(ValueError, match="too long"):
+        validate_manifest(manifest)
